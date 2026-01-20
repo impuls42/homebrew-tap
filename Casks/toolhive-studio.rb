@@ -8,7 +8,7 @@ cask "toolhive-studio" do
       verified: "github.com/stacklok/toolhive-studio/"
 
   name "ToolHive Studio"
-  desc "ToolHive is an application that allows you to install, manage and run MCP servers and connect them to AI agents"
+  desc "Install, manage and run MCP servers and connect them to AI agents"
   homepage "https://toolhive.dev/"
 
   depends_on macos: ">= :monterey"
