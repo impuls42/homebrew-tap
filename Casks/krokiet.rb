@@ -1,8 +1,8 @@
 cask "krokiet" do
-  version "9.0.0"
-  sha256 "7bf6916af208eace87232721f93f5831bce1e6a7fc1c56e58cdc035e39f0c4bc"
+  version "10.0.0"
+  sha256 "47e436b7e8d13bd8b6731225eb9c732a32d6f7f166c7a27735265a03dd4080ee"
 
-  url "https://github.com/qarmin/czkawka/releases/download/#{version}/mac_krokiet_gui_arm"
+  url "https://github.com/qarmin/czkawka/releases/download/#{version}/mac_krokiet_arm64"
   name "krokiet"
   desc "Czkawka frontend written in Slint"
   homepage "https://github.com/qarmin/czkawka"
@@ -23,7 +23,7 @@ cask "krokiet" do
     system_command "/bin/mkdir",
                    args: ["-p", "#{app_path}/Contents/MacOS"]
     system_command "/bin/mv",
-                   args: ["#{staged_path}/mac_krokiet_gui_arm",
+                   args: ["#{staged_path}/mac_krokiet_arm64",
                           "#{app_path}/Contents/MacOS/Krokiet"]
     system_command "/bin/chmod",
                    args: ["+x", "#{app_path}/Contents/MacOS/Krokiet"]
@@ -49,6 +49,6 @@ cask "krokiet" do
 
   zap trash: [
     "~/Library/Application Support/pl.Qarmin.Krokiet",
-    "~/Library/Caches/pl.Qarmin.Czkawka",
+    "~/Library/Caches/pl.Qarmin.Krokiet",
   ]
 end
