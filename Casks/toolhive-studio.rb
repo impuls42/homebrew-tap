@@ -11,6 +11,8 @@ cask "toolhive-studio" do
   desc "ToolHive is an application that allows you to install, manage and run MCP servers and connect them to AI agents"
   homepage "https://toolhive.dev/"
 
+  depends_on macos: ">= :monterey"
+
   livecheck do
     url :url
     strategy :github_releases
