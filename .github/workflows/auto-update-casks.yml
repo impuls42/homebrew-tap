@@ -1,0 +1,145 @@
+name: Auto-Update Casks
+
+on:
+  schedule:
+    # Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:  # Allow manual triggers
+
+permissions:
+  contents: write        # Required for creating commits
+  pull-requests: write   # Required for creating and merging PRs
+
+jobs:
+  check-versions:
+    name: Check for outdated casks
+    runs-on: macos-latest
+    outputs:
+      outdated_casks: ${{ steps.check.outputs.outdated_casks }}
+      has_updates: ${{ steps.check.outputs.has_updates }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        run: |
+          echo "Homebrew already installed on macOS runner"
+          brew --version
+
+      - name: Tap this repository
+        run: |
+          brew tap impuls42/tap "$(pwd)"
+
+      - name: Check for outdated casks
+        id: check
+        run: |
+          set -e
+
+          # Run livecheck and capture output
+          LIVECHECK_OUTPUT=$(brew livecheck --json --tap impuls42/tap --newer-only 2>&1) || true
+          echo "Livecheck output: $LIVECHECK_OUTPUT"
+
+          # Use the check-outdated-casks.sh script to parse results
+          chmod +x .github/scripts/check-outdated-casks.sh
+          OUTDATED_CASKS=$(.github/scripts/check-outdated-casks.sh "$LIVECHECK_OUTPUT")
+
+          echo "Outdated casks: $OUTDATED_CASKS"
+          echo "outdated_casks=$OUTDATED_CASKS" >> $GITHUB_OUTPUT
+
+          # Check if we have any updates
+          if [ "$OUTDATED_CASKS" = "[]" ] || [ -z "$OUTDATED_CASKS" ]; then
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_updates=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Summary
+        run: |
+          echo "### Version Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "Outdated casks: ${{ steps.check.outputs.outdated_casks }}" >> $GITHUB_STEP_SUMMARY
+          echo "Has updates: ${{ steps.check.outputs.has_updates }}" >> $GITHUB_STEP_SUMMARY
+
+  update-cask:
+    name: Update ${{ matrix.cask }}
+    needs: check-versions
+    if: needs.check-versions.outputs.has_updates == 'true'
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        cask: ${{ fromJson(needs.check-versions.outputs.outdated_casks) }}
+      fail-fast: false  # Continue with other casks if one fails
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Homebrew
+        run: |
+          echo "Homebrew already installed on macOS runner"
+          brew --version
+
+      - name: Tap this repository
+        run: |
+          brew tap impuls42/tap "$(pwd)"
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get latest version
+        id: get_version
+        run: |
+          set -e
+
+          # Get the latest version from livecheck
+          LIVECHECK_JSON=$(brew livecheck --json --cask ${{ matrix.cask }} --newer-only 2>&1) || true
+          echo "Livecheck JSON: $LIVECHECK_JSON"
+
+          # Extract the latest version using jq
+          LATEST_VERSION=$(echo "$LIVECHECK_JSON" | jq -r '.[0].version.latest // empty' 2>/dev/null || echo "")
+
+          if [ -z "$LATEST_VERSION" ]; then
+            echo "ERROR: Could not determine latest version for ${{ matrix.cask }}"
+            exit 1
+          fi
+
+          echo "Latest version: $LATEST_VERSION"
+          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create update PR
+        id: create_pr
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+
+          # Make script executable
+          chmod +x .github/scripts/create-update-pr.sh
+
+          # Run the update script
+          .github/scripts/create-update-pr.sh "${{ matrix.cask }}" "${{ steps.get_version.outputs.version }}"
+
+      - name: Validate and auto-merge PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+
+          # Make script executable
+          chmod +x .github/scripts/validate-and-merge.sh
+
+          # Run validation and auto-merge
+          .github/scripts/validate-and-merge.sh "${{ matrix.cask }}"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Update Results for ${{ matrix.cask }}" >> $GITHUB_STEP_SUMMARY
+          echo "Target version: ${{ steps.get_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "Status: ✅ Successfully updated and merged" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Status: ❌ Failed to update" >> $GITHUB_STEP_SUMMARY
+          fi
