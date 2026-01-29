@@ -1,4 +1,4 @@
-name: Auto-Update Casks
+name: Auto-Update
 
 on:
   schedule:
@@ -12,10 +12,10 @@ permissions:
 
 jobs:
   check-versions:
-    name: Check for outdated casks
+    name: Check for outdated packages
     runs-on: macos-latest
     outputs:
-      outdated_casks: ${{ steps.check.outputs.outdated_casks }}
+      outdated_items: ${{ steps.check.outputs.outdated_items }}
       has_updates: ${{ steps.check.outputs.has_updates }}
     steps:
       - name: Checkout repository
@@ -31,7 +31,7 @@ jobs:
         run: |
           brew tap impuls42/tap "$(pwd)"
 
-      - name: Check for outdated casks
+      - name: Check for outdated packages
         id: check
         run: |
           set -e
@@ -40,15 +40,15 @@ jobs:
           LIVECHECK_OUTPUT=$(brew livecheck --json --tap impuls42/tap --newer-only 2>&1) || true
           echo "Livecheck output: $LIVECHECK_OUTPUT"
 
-          # Use the check-outdated-casks.sh script to parse results
-          chmod +x .github/scripts/check-outdated-casks.sh
-          OUTDATED_CASKS=$(.github/scripts/check-outdated-casks.sh "$LIVECHECK_OUTPUT")
+          # Use the check-outdated.sh script to parse results
+          chmod +x .github/scripts/check-outdated.sh
+          OUTDATED_ITEMS=$(.github/scripts/check-outdated.sh "$LIVECHECK_OUTPUT")
 
-          echo "Outdated casks: $OUTDATED_CASKS"
-          echo "outdated_casks=$OUTDATED_CASKS" >> $GITHUB_OUTPUT
+          echo "Outdated items: $OUTDATED_ITEMS"
+          echo "outdated_items=$OUTDATED_ITEMS" >> $GITHUB_OUTPUT
 
           # Check if we have any updates
-          if [ "$OUTDATED_CASKS" = "[]" ] || [ -z "$OUTDATED_CASKS" ]; then
+          if [ "$OUTDATED_ITEMS" = "[]" ] || [ -z "$OUTDATED_ITEMS" ]; then
             echo "has_updates=false" >> $GITHUB_OUTPUT
           else
             echo "has_updates=true" >> $GITHUB_OUTPUT
@@ -57,18 +57,18 @@ jobs:
       - name: Summary
         run: |
           echo "### Version Check Results" >> $GITHUB_STEP_SUMMARY
-          echo "Outdated casks: ${{ steps.check.outputs.outdated_casks }}" >> $GITHUB_STEP_SUMMARY
+          echo "Outdated items: ${{ steps.check.outputs.outdated_items }}" >> $GITHUB_STEP_SUMMARY
           echo "Has updates: ${{ steps.check.outputs.has_updates }}" >> $GITHUB_STEP_SUMMARY
 
-  update-cask:
-    name: Update ${{ matrix.cask }}
+  update-package:
+    name: Update ${{ matrix.item.name }} (${{ matrix.item.type }})
     needs: check-versions
     if: needs.check-versions.outputs.has_updates == 'true'
     runs-on: macos-latest
     strategy:
       matrix:
-        cask: ${{ fromJson(needs.check-versions.outputs.outdated_casks) }}
-      fail-fast: false  # Continue with other casks if one fails
+        item: ${{ fromJson(needs.check-versions.outputs.outdated_items) }}
+      fail-fast: false  # Continue with other packages if one fails
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -93,14 +93,20 @@ jobs:
           set -e
 
           # Get the latest version from livecheck
-          LIVECHECK_JSON=$(brew livecheck --json --cask ${{ matrix.cask }} --newer-only 2>&1) || true
+          # Use appropriate flag based on type
+          if [ "${{ matrix.item.type }}" = "formula" ]; then
+            LIVECHECK_JSON=$(brew livecheck --json --formula ${{ matrix.item.name }} --newer-only 2>&1) || true
+          else
+            LIVECHECK_JSON=$(brew livecheck --json --cask ${{ matrix.item.name }} --newer-only 2>&1) || true
+          fi
           echo "Livecheck JSON: $LIVECHECK_JSON"
 
           # Extract the latest version using jq
-          LATEST_VERSION=$(echo "$LIVECHECK_JSON" | jq -r '.[0].version.latest // empty' 2>/dev/null || echo "")
+          # Handle both JSON starting with [ or mixed output
+          LATEST_VERSION=$(echo "$LIVECHECK_JSON" | sed -n '/^\[/,/^\]/p' | jq -r '.[0].version.latest // empty' 2>/dev/null || echo "")
 
           if [ -z "$LATEST_VERSION" ]; then
-            echo "ERROR: Could not determine latest version for ${{ matrix.cask }}"
+            echo "ERROR: Could not determine latest version for ${{ matrix.item.name }}"
             exit 1
           fi
 
@@ -118,8 +124,8 @@ jobs:
           # Make script executable
           chmod +x .github/scripts/create-update-pr.sh
 
-          # Run the update script
-          .github/scripts/create-update-pr.sh "${{ matrix.cask }}" "${{ steps.get_version.outputs.version }}"
+          # Run the update script with name, version, and type
+          .github/scripts/create-update-pr.sh "${{ matrix.item.name }}" "${{ steps.get_version.outputs.version }}" "${{ matrix.item.type }}"
 
       - name: Validate and auto-merge PR
         env:
@@ -130,16 +136,16 @@ jobs:
           # Make script executable
           chmod +x .github/scripts/validate-and-merge.sh
 
-          # Run validation and auto-merge
-          .github/scripts/validate-and-merge.sh "${{ matrix.cask }}"
+          # Run validation and auto-merge with name and type
+          .github/scripts/validate-and-merge.sh "${{ matrix.item.name }}" "${{ matrix.item.type }}"
 
       - name: Summary
         if: always()
         run: |
-          echo "### Update Results for ${{ matrix.cask }}" >> $GITHUB_STEP_SUMMARY
+          echo "### Update Results for ${{ matrix.item.name }} (${{ matrix.item.type }})" >> $GITHUB_STEP_SUMMARY
           echo "Target version: ${{ steps.get_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           if [ "${{ job.status }}" = "success" ]; then
-            echo "Status: ✅ Successfully updated and merged" >> $GITHUB_STEP_SUMMARY
+            echo "Status: Successfully updated and merged" >> $GITHUB_STEP_SUMMARY
           else
-            echo "Status: ❌ Failed to update" >> $GITHUB_STEP_SUMMARY
+            echo "Status: Failed to update" >> $GITHUB_STEP_SUMMARY
           fi
