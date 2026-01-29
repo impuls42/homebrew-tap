@@ -150,11 +150,7 @@ gh pr create \
   --title "$PR_TITLE" \
   --body "$PR_BODY" \
   --base main \
-  --head "$BRANCH_NAME" || {
-    echo "WARNING: PR creation failed, but changes are committed and pushed"
-    echo "You may need to create the PR manually or it may already exist"
-    # Don't exit with error - the changes are pushed and that's what matters
-  }
+  --head "$BRANCH_NAME"
 
 # Wait a moment for GitHub to process the PR
 sleep 2
