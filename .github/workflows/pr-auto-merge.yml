@@ -1,0 +1,139 @@
+name: PR Auto-Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  validate-and-merge:
+    name: Validate and Auto-Merge
+    # Only run on PRs with the "automatic" label
+    if: contains(github.event.pull_request.labels.*.name, 'automatic')
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Homebrew
+        run: |
+          echo "Homebrew already installed on macOS runner"
+          brew --version
+
+      - name: Tap this repository
+        run: |
+          brew tap impuls42/tap "$(pwd)"
+
+      - name: Detect changed cask or formula
+        id: detect
+        run: |
+          set -e
+
+          # Get the list of changed files
+          CHANGED_FILES=$(gh pr diff ${{ github.event.pull_request.number }} --name-only)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Find the cask or formula that was changed
+          CASK_FILE=$(echo "$CHANGED_FILES" | grep -E '^Casks/.*\.rb$' | head -1 || echo "")
+          FORMULA_FILE=$(echo "$CHANGED_FILES" | grep -E '^Formula/.*\.rb$' | head -1 || echo "")
+
+          if [ -n "$CASK_FILE" ]; then
+            NAME=$(basename "$CASK_FILE" .rb)
+            TYPE="cask"
+            AUDIT_FLAG="--cask"
+          elif [ -n "$FORMULA_FILE" ]; then
+            NAME=$(basename "$FORMULA_FILE" .rb)
+            TYPE="formula"
+            AUDIT_FLAG="--formula"
+          else
+            echo "ERROR: No cask or formula file found in PR changes"
+            exit 1
+          fi
+
+          echo "Detected $TYPE: $NAME"
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          echo "type=$TYPE" >> $GITHUB_OUTPUT
+          echo "audit_flag=$AUDIT_FLAG" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Run brew audit
+        id: audit
+        run: |
+          set -e
+
+          echo "Running: brew audit ${{ steps.detect.outputs.audit_flag }} ${{ steps.detect.outputs.name }}"
+          echo ""
+
+          brew audit ${{ steps.detect.outputs.audit_flag }} "${{ steps.detect.outputs.name }}"
+
+          echo ""
+          echo "Audit passed"
+
+      - name: Run brew style
+        run: |
+          set -e
+
+          echo "Running: brew style ${{ steps.detect.outputs.name }}"
+          echo ""
+
+          brew style "${{ steps.detect.outputs.name }}"
+
+          echo ""
+          echo "Style check passed"
+
+      - name: Add success comment
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          COMMENT="## Validation Passed
+
+          All checks passed successfully:
+
+          - \`brew audit ${{ steps.detect.outputs.audit_flag }} ${{ steps.detect.outputs.name }}\` - **Passed**
+          - \`brew style ${{ steps.detect.outputs.name }}\` - **Passed**
+
+          This PR is ready to be merged."
+
+          gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
+
+      - name: Enable auto-merge
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Enabling auto-merge for PR #${{ github.event.pull_request.number }}..."
+          gh pr merge ${{ github.event.pull_request.number }} --auto --squash --delete-branch
+          echo "Auto-merge enabled (squash strategy, will merge once approved)"
+
+      - name: Add failure comment
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          COMMENT="## Validation Failed
+
+          One or more checks failed. Please review the workflow logs for details.
+
+          This PR requires manual fixes before it can be merged."
+
+          gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Validation Results for ${{ steps.detect.outputs.name }} (${{ steps.detect.outputs.type }})" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "Status: Validation passed, auto-merge enabled" >> $GITHUB_STEP_SUMMARY
+            echo "The PR will be merged automatically once approved." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Status: Validation failed" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
+          fi

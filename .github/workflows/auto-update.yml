@@ -131,25 +131,13 @@ jobs:
           # Run the update script with name, version, and type
           .github/scripts/create-update-pr.sh "${{ matrix.item.name }}" "${{ steps.get_version.outputs.version }}" "${{ matrix.item.type }}"
 
-      - name: Validate and auto-merge PR
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -e
-
-          # Make script executable
-          chmod +x .github/scripts/validate-and-merge.sh
-
-          # Run validation and auto-merge with name and type
-          .github/scripts/validate-and-merge.sh "${{ matrix.item.name }}" "${{ matrix.item.type }}"
-
       - name: Summary
         if: always()
         run: |
           echo "### Update Results for ${{ matrix.item.name }} (${{ matrix.item.type }})" >> $GITHUB_STEP_SUMMARY
           echo "Target version: ${{ steps.get_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           if [ "${{ job.status }}" = "success" ]; then
-            echo "Status: Successfully updated and merged" >> $GITHUB_STEP_SUMMARY
+            echo "Status: PR created successfully (will be validated and merged by separate workflow)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "Status: Failed to update" >> $GITHUB_STEP_SUMMARY
+            echo "Status: Failed to create PR" >> $GITHUB_STEP_SUMMARY
           fi
