@@ -25,6 +25,13 @@ cask "sdrangel" do
 
   app "SDRangel.app"
 
+  postflight do
+    system_command "/usr/bin/codesign",
+                   args: ["--force", "--deep", "--sign", "-", "#{appdir}/SDRangel.app"]
+    system_command "/usr/bin/xattr",
+                   args: ["-dr", "com.apple.quarantine", "#{appdir}/SDRangel.app"]
+  end
+
   zap trash: [
     "~/Library/Application Support/sdrangel",
     "~/Library/Logs/SDRangel",
