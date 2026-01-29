@@ -27,9 +27,9 @@ if [ -z "$JSON_CONTENT" ]; then
 fi
 
 # Parse JSON and extract items where version.outdated is true
-# Returns array of objects with name and type
+# Returns array of objects with name and type (compact single-line JSON for GitHub Actions)
 # Casks have "cask" field, formulas have "formula" field
-OUTDATED_ITEMS=$(echo "$JSON_CONTENT" | jq -r '
+OUTDATED_ITEMS=$(echo "$JSON_CONTENT" | jq -c '
   [
     .[] |
     select(.version.outdated == true) |
