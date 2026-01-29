@@ -25,9 +25,19 @@ fi
 # Capitalize the type for display
 TYPE_DISPLAY=$(echo "$TYPE" | sed 's/^./\U&/')
 
-# Get the PR number for the current branch
+# Get the PR number for the current branch (with retry)
 CURRENT_BRANCH=$(git branch --show-current)
-PR_NUMBER=$(gh pr list --head "$CURRENT_BRANCH" --json number --jq '.[0].number' 2>/dev/null || echo "")
+PR_NUMBER=""
+
+# Retry a few times in case GitHub needs a moment to register the PR
+for i in 1 2 3; do
+  PR_NUMBER=$(gh pr list --head "$CURRENT_BRANCH" --json number --jq '.[0].number' 2>/dev/null || echo "")
+  if [ -n "$PR_NUMBER" ]; then
+    break
+  fi
+  echo "Waiting for PR to be available (attempt $i/3)..."
+  sleep 3
+done
 
 if [ -z "$PR_NUMBER" ]; then
   echo "WARNING: No PR found for branch $CURRENT_BRANCH"
