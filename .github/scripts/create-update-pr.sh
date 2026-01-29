@@ -28,6 +28,13 @@ else
   LABEL_TYPE="cask-update"
 fi
 
+# Get the tap directory (brew writes changes there, not to checkout dir)
+TAP_DIR=$(brew --repository impuls42/tap)
+TAP_FILE_PATH="${TAP_DIR}/${FILE_PATH}"
+
+echo "Checkout directory: $(pwd)"
+echo "Tap directory: $TAP_DIR"
+
 # Verify the file exists
 if [ ! -f "$FILE_PATH" ]; then
   echo "ERROR: File not found: $FILE_PATH"
@@ -69,6 +76,15 @@ brew "$BREW_CMD" \
 echo ""
 echo "$TYPE file updated successfully"
 echo ""
+
+# Copy the updated file from tap directory back to checkout directory
+# (brew bump-*-pr writes to tap dir, not checkout dir)
+if [ -f "$TAP_FILE_PATH" ]; then
+  cp "$TAP_FILE_PATH" "$FILE_PATH"
+  echo "Copied updated file from tap directory"
+else
+  echo "WARNING: Could not find updated file at $TAP_FILE_PATH"
+fi
 
 # Check if there are any changes
 if git diff --quiet "$FILE_PATH"; then
