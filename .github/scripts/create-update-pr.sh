@@ -148,20 +148,30 @@ if [ -n "$EXISTING_PR" ]; then
     --body "$PR_BODY"
   
   echo ""
+  echo "PR updated successfully"
+  echo ""
+  
+  # Re-trigger the pr-auto-merge workflow by toggling the automatic label
+  # This is necessary because pushes from GITHUB_TOKEN don't trigger workflows
+  echo "Re-triggering validation workflow..."
+  gh pr edit "$EXISTING_PR" --remove-label "automatic" 2>/dev/null || true
+  sleep 2
+  gh pr edit "$EXISTING_PR" --add-label "automatic"
+  
+  echo ""
   echo "========================================="
-  echo "PR #$EXISTING_PR updated successfully for $NAME"
+  echo "PR #$EXISTING_PR updated and validation triggered for $NAME"
   echo "========================================="
 else
   echo "Creating new PR..."
   
-  # Create PR with automatic label and request review from repo owner
+  # Create PR with automatic label (no reviewer - will be added only if validation fails)
   gh pr create \
     --title "$PR_TITLE" \
     --body "$PR_BODY" \
     --base main \
     --head "$BRANCH_NAME" \
-    --label "automatic" \
-    --reviewer "${GITHUB_REPOSITORY_OWNER}"
+    --label "automatic"
   
   echo ""
   echo "========================================="

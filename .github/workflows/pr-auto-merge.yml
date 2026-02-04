@@ -125,6 +125,10 @@ jobs:
           This PR requires manual fixes before it can be merged."
 
           gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
+          
+          # Request review from repository owner when validation fails
+          echo "Requesting review from repository owner due to validation failure..."
+          gh pr edit ${{ github.event.pull_request.number }} --add-reviewer "${{ github.repository_owner }}"
 
       - name: Summary
         if: always()
