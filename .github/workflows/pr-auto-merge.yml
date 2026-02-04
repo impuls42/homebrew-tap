@@ -211,31 +211,35 @@ jobs:
           if [ "${{ steps.detect.outputs.type }}" = "cask" ]; then
             echo "Running: brew install --cask ${{ steps.detect.outputs.name }}"
             brew install --cask "${{ steps.detect.outputs.name }}"
+            echo "installed=true" >> $GITHUB_OUTPUT
           else
             echo "Running: brew install ${{ steps.detect.outputs.name }}"
             # For formulas, we need to handle build dependencies
             # Some formulas like firefox-webserial require platformio which may not be available
-            brew install "${{ steps.detect.outputs.name }}" || {
-              echo "Installation failed - this may be expected for formulas requiring unavailable build dependencies"
-              echo "Checking if formula has build dependencies..."
+            if brew install "${{ steps.detect.outputs.name }}"; then
+              echo "installed=true" >> $GITHUB_OUTPUT
+            else
+              echo "Installation failed - checking if this is due to unavailable build dependencies..."
               
-              # Check if the formula depends on unavailable tools
-              if brew deps --include-build "${{ steps.detect.outputs.name }}" | grep -q "platformio\|unavailable"; then
-                echo "Formula has build dependencies that are not available in CI environment"
-                echo "Skipping installation test for this formula"
+              # Check if the formula depends on platformio or other unavailable tools
+              BUILD_DEPS=$(brew deps --include-build "${{ steps.detect.outputs.name }}" 2>/dev/null || echo "")
+              if echo "$BUILD_DEPS" | grep -q "^platformio$"; then
+                echo "Formula requires PlatformIO which is not available in CI environment"
+                echo "Skipping installation test - formula syntax and style have been validated"
+                echo "installed=false" >> $GITHUB_OUTPUT
                 exit 0
               else
                 echo "Installation failed unexpectedly"
                 exit 1
               fi
-            }
+            fi
           fi
 
           echo ""
           echo "Installation test passed"
 
       - name: Cleanup test installation
-        if: always() && steps.install_test.outcome != 'skipped'
+        if: always() && steps.install_test.outputs.installed == 'true'
         run: |
           echo "Cleaning up test installation..."
           
