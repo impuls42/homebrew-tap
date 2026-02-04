@@ -53,13 +53,15 @@ class FirefoxWebserial < Formula
   end
 
   def post_install
-    # Run the setup script automatically
-    system prefix/"setup.sh"
+    # Run the setup script automatically only if HOME is set
+    system prefix/"setup.sh" if ENV["HOME"]
   end
 
   def caveats
     <<~EOS
-      To complete the installation, run:
+      The native messaging host setup runs automatically during installation.
+
+      If you need to re-run the setup (e.g., after reinstalling Firefox), execute:
         #{prefix}/setup.sh
 
       Or manually create a symlink and manifest:
@@ -72,6 +74,7 @@ class FirefoxWebserial < Formula
   end
 
   test do
-    system "true"
+    assert_predicate bin/"firefox-webserial", :exist?
+    assert_predicate bin/"firefox-webserial", :executable?
   end
 end
