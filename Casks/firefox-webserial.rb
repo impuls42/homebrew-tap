@@ -56,7 +56,10 @@ cask "firefox-webserial" do
     JSON
   end
 
-  uninstall delete: "#{Dir.home}/Library/Application Support/Mozilla/NativeMessagingHosts/io.github.kuba2k2.webserial.json"
+  uninstall delete: [
+    "#{Dir.home}/Library/Application Support/Mozilla/NativeMessagingHosts/firefox-webserial",
+    "#{Dir.home}/Library/Application Support/Mozilla/NativeMessagingHosts/io.github.kuba2k2.webserial.json",
+  ]
 
   zap trash: [
     "~/Library/Application Support/Mozilla/NativeMessagingHosts/firefox-webserial",
