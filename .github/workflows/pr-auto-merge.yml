@@ -70,8 +70,9 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        # If triggered by workflow_run, process each PR found
-        # If triggered by pull_request, process that single PR
+        # Matrix strategy to handle both trigger types:
+        # - workflow_run: process array of PR numbers from find-prs job
+        # - pull_request: process single PR number from event
         pr_number: ${{ github.event_name == 'workflow_run' && fromJson(needs.find-prs.outputs.pr_numbers) || fromJson(format('[{0}]', github.event.pull_request.number)) }}
       fail-fast: false
     steps:
@@ -92,6 +93,8 @@ jobs:
           echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
           echo "has_automatic_label=$HAS_LABEL" >> $GITHUB_OUTPUT
 
+      # Early exit if PR doesn't have automatic label
+      # This can happen if the label was removed after the workflow started
       - name: Skip if no automatic label
         if: steps.pr_details.outputs.has_automatic_label != 'true'
         run: |
