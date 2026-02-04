@@ -21,7 +21,7 @@ cask "sdrangel" do
     strategy :github_releases
   end
 
-  depends_on macos: ">= :monterey"
+  depends_on macos: ">= :sonoma"
 
   app "SDRangel.app"
 
