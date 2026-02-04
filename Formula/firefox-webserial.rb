@@ -54,7 +54,7 @@ class FirefoxWebserial < Formula
 
   def post_install
     # Run the setup script automatically only if HOME is set
-    system prefix/"setup.sh" if ENV["HOME"]
+    system prefix/"setup.sh" if Dir.home
   end
 
   def caveats
@@ -74,7 +74,7 @@ class FirefoxWebserial < Formula
   end
 
   test do
-    assert_predicate bin/"firefox-webserial", :exist?
+    assert_path_exists bin/"firefox-webserial"
     assert_predicate bin/"firefox-webserial", :executable?
   end
 end
