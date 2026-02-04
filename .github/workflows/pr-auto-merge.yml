@@ -144,7 +144,7 @@ jobs:
           set -e
 
           # Get the list of changed files
-          CHANGED_FILES=$(gh pr diff ${{ matrix.pr_number }} --name-only)
+          CHANGED_FILES=$(gh pr diff ${{ matrix.pr_number }} --repo ${{ github.repository }} --name-only)
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
@@ -213,7 +213,7 @@ jobs:
 
           This PR will be automatically approved and merged."
 
-          gh pr comment ${{ matrix.pr_number }} --body "$COMMENT"
+          gh pr comment ${{ matrix.pr_number }} --repo ${{ github.repository }} --body "$COMMENT"
 
       - name: Approve PR
         if: success() && steps.pr_details.outputs.has_automatic_label == 'true'
@@ -223,7 +223,7 @@ jobs:
           echo "Approving PR #${{ matrix.pr_number }}..."
           # Note: GITHUB_TOKEN can approve PRs created by different workflows
           # This PR is created by "Auto-Update" workflow, approved by "PR Auto-Merge" workflow
-          gh pr review ${{ matrix.pr_number }} --approve --body "✅ Automated approval after successful validation checks." 2>&1 || {
+          gh pr review ${{ matrix.pr_number }} --repo ${{ github.repository }} --approve --body "✅ Automated approval after successful validation checks." 2>&1 || {
             echo "Warning: Could not approve PR automatically. This may require repository settings to allow GitHub Actions to approve PRs."
             echo "Alternative: PR is ready and validated - manual approval will enable auto-merge."
             exit 0
@@ -236,7 +236,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "Enabling auto-merge for PR #${{ matrix.pr_number }}..."
-          gh pr merge ${{ matrix.pr_number }} --auto --squash --delete-branch
+          gh pr merge ${{ matrix.pr_number }} --repo ${{ github.repository }} --auto --squash --delete-branch
           echo "Auto-merge enabled (squash strategy, will merge automatically)"
 
       - name: Add failure comment
@@ -250,12 +250,12 @@ jobs:
 
           This PR requires manual fixes before it can be merged."
 
-          gh pr comment ${{ matrix.pr_number }} --body "$COMMENT"
+          gh pr comment ${{ matrix.pr_number }} --repo ${{ github.repository }} --body "$COMMENT"
           
           # Request review from repository owner when validation fails
           # This notifies the owner that manual intervention is needed
           echo "Requesting review from repository owner due to validation failure..."
-          gh pr edit ${{ matrix.pr_number }} --add-reviewer "${{ github.repository_owner }}" 2>&1 || \
+          gh pr edit ${{ matrix.pr_number }} --repo ${{ github.repository }} --add-reviewer "${{ github.repository_owner }}" 2>&1 || \
             echo "Could not add reviewer (may already be assigned or other API limitation)"
 
       - name: Summary
