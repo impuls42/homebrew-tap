@@ -109,7 +109,7 @@ jobs:
       - name: Skip if PR from fork
         if: steps.pr_details.outputs.is_same_repo != 'true'
         run: |
-          echo "::notice::PR #${{ matrix.pr_number }} is from a fork (${{ steps.pr_details.outputs.head_repo }}), skipping for security"
+          echo "::notice::PR #${{ matrix.pr_number }} is from a fork (${{ steps.pr_details.outputs.head_repo }}), blocking workflow execution for security"
           exit 1
 
       # Early exit if PR doesn't have automatic label
@@ -117,7 +117,7 @@ jobs:
       - name: Skip if no automatic label
         if: steps.pr_details.outputs.has_automatic_label != 'true'
         run: |
-          echo "::notice::PR #${{ matrix.pr_number }} does not have 'automatic' label, skipping"
+          echo "::notice::PR #${{ matrix.pr_number }} does not have 'automatic' label, blocking workflow execution"
           exit 1
 
       - name: Checkout repository
