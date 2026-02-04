@@ -12,6 +12,14 @@
 name: PR Auto-Merge
 
 on:
+  # Trigger when Auto-Update workflow completes
+  # This solves the issue where GITHUB_TOKEN can't trigger workflows on PRs it creates
+  workflow_run:
+    workflows: ["Auto-Update"]
+    types:
+      - completed
+  
+  # Keep these triggers for manual operations and edge cases
   pull_request:
     types: [opened, synchronize, labeled]
 
@@ -20,33 +28,93 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Job to find PRs when triggered by workflow_run
+  find-prs:
+    name: Find PRs to Process
+    if: github.event_name == 'workflow_run'
+    runs-on: ubuntu-latest
+    outputs:
+      pr_numbers: ${{ steps.find.outputs.pr_numbers }}
+    steps:
+      - name: Find open PRs with automatic label
+        id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Find all open PRs with the "automatic" label
+          PR_NUMBERS=$(gh pr list \
+            --repo ${{ github.repository }} \
+            --state open \
+            --label "automatic" \
+            --json number \
+            --jq '[.[].number] | join(",")')
+          
+          echo "Found PRs: $PR_NUMBERS"
+          echo "pr_numbers=$PR_NUMBERS" >> $GITHUB_OUTPUT
+
   validate-and-merge:
     name: Validate and Auto-Merge
-    # Only run on PRs with the "automatic" label
-    if: contains(github.event.pull_request.labels.*.name, 'automatic')
+    needs: find-prs
+    if: |
+      always() && 
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'automatic')) ||
+      (github.event_name == 'workflow_run' && needs.find-prs.outputs.pr_numbers != '')
     runs-on: macos-latest
+    strategy:
+      matrix:
+        # If triggered by workflow_run, process each PR found
+        # If triggered by pull_request, process that single PR
+        pr_number: ${{ github.event_name == 'workflow_run' && fromJson(format('[{0}]', needs.find-prs.outputs.pr_numbers)) || fromJson(format('[{0}]', github.event.pull_request.number)) }}
+      fail-fast: false
     steps:
+      - name: Get PR details
+        id: pr_details
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_DATA=$(gh pr view ${{ matrix.pr_number }} \
+            --repo ${{ github.repository }} \
+            --json headRefName,headRefOid,labels)
+          
+          HEAD_REF=$(echo "$PR_DATA" | jq -r '.headRefName')
+          HEAD_SHA=$(echo "$PR_DATA" | jq -r '.headRefOid')
+          HAS_LABEL=$(echo "$PR_DATA" | jq -r '[.labels[].name] | contains(["automatic"])')
+          
+          echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
+          echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
+          echo "has_automatic_label=$HAS_LABEL" >> $GITHUB_OUTPUT
+
+      - name: Skip if no automatic label
+        if: steps.pr_details.outputs.has_automatic_label != 'true'
+        run: |
+          echo "PR #${{ matrix.pr_number }} does not have 'automatic' label, skipping"
+          exit 0
+
       - name: Checkout repository
+        if: steps.pr_details.outputs.has_automatic_label == 'true'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ steps.pr_details.outputs.head_sha }}
 
       - name: Set up Homebrew
+        if: steps.pr_details.outputs.has_automatic_label == 'true'
         run: |
           echo "Homebrew already installed on macOS runner"
           brew --version
 
       - name: Tap this repository
+        if: steps.pr_details.outputs.has_automatic_label == 'true'
         run: |
           brew tap impuls42/tap "$(pwd)"
 
       - name: Detect changed cask or formula
+        if: steps.pr_details.outputs.has_automatic_label == 'true'
         id: detect
         run: |
           set -e
 
           # Get the list of changed files
-          CHANGED_FILES=$(gh pr diff ${{ github.event.pull_request.number }} --name-only)
+          CHANGED_FILES=$(gh pr diff ${{ matrix.pr_number }} --name-only)
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
@@ -75,6 +143,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Run brew audit
+        if: steps.pr_details.outputs.has_automatic_label == 'true'
         id: audit
         run: |
           set -e
@@ -88,6 +157,7 @@ jobs:
           echo "Audit passed"
 
       - name: Run brew style
+        if: steps.pr_details.outputs.has_automatic_label == 'true'
         run: |
           set -e
 
@@ -100,7 +170,7 @@ jobs:
           echo "Style check passed"
 
       - name: Add success comment
-        if: success()
+        if: success() && steps.pr_details.outputs.has_automatic_label == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -113,17 +183,17 @@ jobs:
 
           This PR will be automatically approved and merged."
 
-          gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
+          gh pr comment ${{ matrix.pr_number }} --body "$COMMENT"
 
       - name: Approve PR
-        if: success()
+        if: success() && steps.pr_details.outputs.has_automatic_label == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Approving PR #${{ github.event.pull_request.number }}..."
+          echo "Approving PR #${{ matrix.pr_number }}..."
           # Note: GITHUB_TOKEN can approve PRs created by different workflows
           # This PR is created by "Auto-Update" workflow, approved by "PR Auto-Merge" workflow
-          gh pr review ${{ github.event.pull_request.number }} --approve --body "✅ Automated approval after successful validation checks." 2>&1 || {
+          gh pr review ${{ matrix.pr_number }} --approve --body "✅ Automated approval after successful validation checks." 2>&1 || {
             echo "Warning: Could not approve PR automatically. This may require repository settings to allow GitHub Actions to approve PRs."
             echo "Alternative: PR is ready and validated - manual approval will enable auto-merge."
             exit 0
@@ -131,16 +201,16 @@ jobs:
           echo "PR approved"
 
       - name: Enable auto-merge
-        if: success()
+        if: success() && steps.pr_details.outputs.has_automatic_label == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Enabling auto-merge for PR #${{ github.event.pull_request.number }}..."
-          gh pr merge ${{ github.event.pull_request.number }} --auto --squash --delete-branch
+          echo "Enabling auto-merge for PR #${{ matrix.pr_number }}..."
+          gh pr merge ${{ matrix.pr_number }} --auto --squash --delete-branch
           echo "Auto-merge enabled (squash strategy, will merge automatically)"
 
       - name: Add failure comment
-        if: failure()
+        if: failure() && steps.pr_details.outputs.has_automatic_label == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -150,12 +220,12 @@ jobs:
 
           This PR requires manual fixes before it can be merged."
 
-          gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
+          gh pr comment ${{ matrix.pr_number }} --body "$COMMENT"
           
           # Request review from repository owner when validation fails
           # This notifies the owner that manual intervention is needed
           echo "Requesting review from repository owner due to validation failure..."
-          gh pr edit ${{ github.event.pull_request.number }} --add-reviewer "${{ github.repository_owner }}" 2>&1 || \
+          gh pr edit ${{ matrix.pr_number }} --add-reviewer "${{ github.repository_owner }}" 2>&1 || \
             echo "Could not add reviewer (may already be assigned or other API limitation)"
 
       - name: Summary

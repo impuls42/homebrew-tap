@@ -11,8 +11,9 @@ This tap uses GitHub Actions to automatically check for new versions, create pul
 1. **Daily Version Check** (6 AM UTC)
    - Runs `brew livecheck` to detect outdated packages
    - Creates/updates PRs for new versions
+   - PRs are automatically labeled with "automatic"
 
-2. **Automatic Validation**
+2. **Automatic Validation** (Triggered after Auto-Update completes)
    - Runs `brew audit` to check for issues
    - Runs `brew style` to ensure code quality
    - Downloads binaries and verifies checksums
@@ -20,6 +21,13 @@ This tap uses GitHub Actions to automatically check for new versions, create pul
 3. **Automatic Approval & Merge**
    - If validation passes: PR is approved and merged automatically
    - If validation fails: Repository owner is notified for manual review
+
+### Technical Details
+
+The automation uses a `workflow_run` trigger to chain the workflows together:
+- The `Auto-Update` workflow creates/updates PRs
+- When `Auto-Update` completes, it automatically triggers `PR Auto-Merge`
+- This solves GitHub's limitation where `GITHUB_TOKEN` cannot trigger workflows on PRs it creates
 
 ### Setup Requirements
 
