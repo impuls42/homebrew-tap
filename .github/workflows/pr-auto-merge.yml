@@ -1,3 +1,14 @@
+# This workflow validates and automatically merges PRs with the "automatic" label
+# 
+# Prerequisites for full automation:
+# 1. Repository Settings → Actions → General → Workflow permissions:
+#    - Enable "Allow GitHub Actions to create and approve pull requests"
+# 2. Repository Settings → General → Pull Requests:
+#    - Enable "Allow auto-merge"
+# 3. (Optional) Branch protection: Don't require approvals, or set to 0 required reviewers
+#
+# The workflow will still work without these settings, but will require manual approval.
+
 name: PR Auto-Merge
 
 on:
@@ -110,7 +121,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "Approving PR #${{ github.event.pull_request.number }}..."
-          gh pr review ${{ github.event.pull_request.number }} --approve --body "✅ Automated approval after successful validation checks."
+          # Note: GITHUB_TOKEN can approve PRs created by different workflows
+          # This PR is created by "Auto-Update" workflow, approved by "PR Auto-Merge" workflow
+          gh pr review ${{ github.event.pull_request.number }} --approve --body "✅ Automated approval after successful validation checks." 2>&1 || {
+            echo "Warning: Could not approve PR automatically. This may require repository settings to allow GitHub Actions to approve PRs."
+            echo "Alternative: PR is ready and validated - manual approval will enable auto-merge."
+            exit 0
+          }
           echo "PR approved"
 
       - name: Enable auto-merge
