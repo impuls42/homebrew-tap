@@ -65,6 +65,7 @@ brew install <package-name>
 - **toolhive-studio** - ToolHive Studio application
 - **sdrangel** - SDR software
 - **krokiet** - Messaging application
+- **firefox-webserial** - Native messaging host for WebSerial API polyfill for Firefox
 
 ## Contributing
 
