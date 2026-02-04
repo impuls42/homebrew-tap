@@ -28,8 +28,7 @@ cask "firefox-webserial" do
     system_command "/bin/mkdir", args: ["-p", target_dir]
 
     # Determine the correct source filename based on architecture
-    source_file = on_arch_conditional arm:   "firefox-webserial-macos-arm64",
-                                      intel: "firefox-webserial-macos-x86-64"
+    source_file = Hardware::CPU.arm? ? "firefox-webserial-macos-arm64" : "firefox-webserial-macos-x86-64"
 
     # Copy the binary to target directory
     system_command "/bin/cp",
