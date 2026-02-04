@@ -28,7 +28,10 @@ cask "firefox-webserial" do
     system_command "/bin/mkdir", args: ["-p", target_dir]
 
     # Determine the correct source filename based on architecture
+    # rubocop:disable Cask/Variables
+    # on_arch_conditional doesn't work in postflight blocks, must use Hardware::CPU
     source_file = Hardware::CPU.arm? ? "firefox-webserial-macos-arm64" : "firefox-webserial-macos-x86-64"
+    # rubocop:enable Cask/Variables
 
     # Copy the binary to target directory
     system_command "/bin/cp",
