@@ -8,6 +8,14 @@
 # 3. (Optional) Branch protection: Don't require approvals, or set to 0 required reviewers
 #
 # The workflow will still work without these settings, but will require manual approval.
+#
+# Security Note:
+# This workflow uses workflow_run trigger which checks out PR code.
+# Security measures in place:
+# - Only processes PRs with "automatic" label (controlled by Auto-Update workflow)
+# - Only processes PRs from the same repository (not forks)
+# - Runs validation (brew audit, brew style) before any approval
+# - No arbitrary code execution; only Homebrew tooling
 
 name: PR Auto-Merge
 
@@ -83,15 +91,26 @@ jobs:
         run: |
           PR_DATA=$(gh pr view ${{ matrix.pr_number }} \
             --repo ${{ github.repository }} \
-            --json headRefName,headRefOid,labels)
+            --json headRefName,headRefOid,labels,headRepository)
           
           HEAD_REF=$(echo "$PR_DATA" | jq -r '.headRefName')
           HEAD_SHA=$(echo "$PR_DATA" | jq -r '.headRefOid')
           HAS_LABEL=$(echo "$PR_DATA" | jq -r '[.labels[].name] | contains(["automatic"])')
+          HEAD_REPO=$(echo "$PR_DATA" | jq -r '.headRepository.nameWithOwner')
           
           echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
           echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
           echo "has_automatic_label=$HAS_LABEL" >> $GITHUB_OUTPUT
+          echo "head_repo=$HEAD_REPO" >> $GITHUB_OUTPUT
+          echo "is_same_repo=$([[ \"$HEAD_REPO\" == \"${{ github.repository }}\" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      # Security check: Only process PRs from the same repository (not forks)
+      # This prevents execution of untrusted code from forked PRs
+      - name: Skip if PR from fork
+        if: steps.pr_details.outputs.is_same_repo != 'true'
+        run: |
+          echo "PR #${{ matrix.pr_number }} is from a fork (${{ steps.pr_details.outputs.head_repo }}), skipping for security"
+          exit 0
 
       # Early exit if PR doesn't have automatic label
       # This can happen if the label was removed after the workflow started
@@ -102,24 +121,24 @@ jobs:
           exit 0
 
       - name: Checkout repository
-        if: steps.pr_details.outputs.has_automatic_label == 'true'
+        if: steps.pr_details.outputs.has_automatic_label == 'true' && steps.pr_details.outputs.is_same_repo == 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.pr_details.outputs.head_sha }}
 
       - name: Set up Homebrew
-        if: steps.pr_details.outputs.has_automatic_label == 'true'
+        if: steps.pr_details.outputs.has_automatic_label == 'true' && steps.pr_details.outputs.is_same_repo == 'true'
         run: |
           echo "Homebrew already installed on macOS runner"
           brew --version
 
       - name: Tap this repository
-        if: steps.pr_details.outputs.has_automatic_label == 'true'
+        if: steps.pr_details.outputs.has_automatic_label == 'true' && steps.pr_details.outputs.is_same_repo == 'true'
         run: |
           brew tap impuls42/tap "$(pwd)"
 
       - name: Detect changed cask or formula
-        if: steps.pr_details.outputs.has_automatic_label == 'true'
+        if: steps.pr_details.outputs.has_automatic_label == 'true' && steps.pr_details.outputs.is_same_repo == 'true'
         id: detect
         run: |
           set -e
@@ -154,7 +173,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Run brew audit
-        if: steps.pr_details.outputs.has_automatic_label == 'true'
+        if: steps.pr_details.outputs.has_automatic_label == 'true' && steps.pr_details.outputs.is_same_repo == 'true'
         id: audit
         run: |
           set -e
@@ -168,7 +187,7 @@ jobs:
           echo "Audit passed"
 
       - name: Run brew style
-        if: steps.pr_details.outputs.has_automatic_label == 'true'
+        if: steps.pr_details.outputs.has_automatic_label == 'true' && steps.pr_details.outputs.is_same_repo == 'true'
         run: |
           set -e
 
