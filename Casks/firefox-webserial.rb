@@ -27,11 +27,9 @@ cask "firefox-webserial" do
     target_dir = "#{Dir.home}/Library/Application Support/Mozilla/NativeMessagingHosts"
     system_command "/bin/mkdir", args: ["-p", target_dir]
 
-    # Determine the correct source filename based on architecture
-    # rubocop:disable Cask/Variables
-    # on_arch_conditional doesn't work in postflight blocks, must use Hardware::CPU
-    source_file = Hardware::CPU.arm? ? "firefox-webserial-macos-arm64" : "firefox-webserial-macos-x86-64"
-    # rubocop:enable Cask/Variables
+    # Find the downloaded binary (architecture-specific filename)
+    source_file = Dir.glob("#{staged_path}/firefox-webserial-macos-*").first
+    source_file = File.basename(source_file) if source_file
 
     # Copy the binary to target directory
     system_command "/bin/cp",
