@@ -151,18 +151,13 @@ if [ -n "$EXISTING_PR" ]; then
   echo "PR updated successfully"
   echo ""
   
-  # Re-trigger the pr-auto-merge workflow by toggling the automatic label
-  # This is necessary because pushes from GITHUB_TOKEN don't trigger workflows
-  echo "Re-triggering validation workflow..."
-  gh pr edit "$EXISTING_PR" --remove-label "automatic" 2>/dev/null || true
-  # Wait for GitHub API to process the label removal before re-adding
-  # A short delay is necessary to ensure the label change triggers the workflow
-  sleep 2
-  gh pr edit "$EXISTING_PR" --add-label "automatic"
+  # Note: No need to manually trigger workflow anymore
+  # The Auto-Update workflow completion will automatically trigger PR Auto-Merge via workflow_run
   
   echo ""
   echo "========================================="
-  echo "PR #$EXISTING_PR updated and validation triggered for $NAME"
+  echo "PR #$EXISTING_PR updated for $NAME"
+  echo "PR Auto-Merge workflow will be triggered automatically"
   echo "========================================="
 else
   echo "Creating new PR..."
