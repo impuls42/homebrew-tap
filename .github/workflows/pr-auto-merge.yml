@@ -35,6 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       pr_numbers: ${{ steps.find.outputs.pr_numbers }}
+      has_prs: ${{ steps.find.outputs.has_prs }}
     steps:
       - name: Find open PRs with automatic label
         id: find
@@ -47,24 +48,31 @@ jobs:
             --state open \
             --label "automatic" \
             --json number \
-            --jq '[.[].number] | join(",")')
+            --jq '[.[].number]')
           
           echo "Found PRs: $PR_NUMBERS"
           echo "pr_numbers=$PR_NUMBERS" >> $GITHUB_OUTPUT
+          
+          # Check if we have any PRs
+          if [ "$PR_NUMBERS" = "[]" ] || [ -z "$PR_NUMBERS" ]; then
+            echo "has_prs=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_prs=true" >> $GITHUB_OUTPUT
+          fi
 
   validate-and-merge:
     name: Validate and Auto-Merge
     needs: find-prs
     if: |
       always() && 
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'automatic')) ||
-      (github.event_name == 'workflow_run' && needs.find-prs.outputs.pr_numbers != '')
+      ((github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'automatic')) ||
+       (github.event_name == 'workflow_run' && needs.find-prs.outputs.has_prs == 'true'))
     runs-on: macos-latest
     strategy:
       matrix:
         # If triggered by workflow_run, process each PR found
         # If triggered by pull_request, process that single PR
-        pr_number: ${{ github.event_name == 'workflow_run' && fromJson(format('[{0}]', needs.find-prs.outputs.pr_numbers)) || fromJson(format('[{0}]', github.event.pull_request.number)) }}
+        pr_number: ${{ github.event_name == 'workflow_run' && fromJson(needs.find-prs.outputs.pr_numbers) || fromJson(format('[{0}]', github.event.pull_request.number)) }}
       fail-fast: false
     steps:
       - name: Get PR details
