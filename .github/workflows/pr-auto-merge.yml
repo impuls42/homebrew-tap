@@ -109,16 +109,16 @@ jobs:
       - name: Skip if PR from fork
         if: steps.pr_details.outputs.is_same_repo != 'true'
         run: |
-          echo "PR #${{ matrix.pr_number }} is from a fork (${{ steps.pr_details.outputs.head_repo }}), skipping for security"
-          exit 0
+          echo "::notice::PR #${{ matrix.pr_number }} is from a fork (${{ steps.pr_details.outputs.head_repo }}), skipping for security"
+          exit 1
 
       # Early exit if PR doesn't have automatic label
       # This can happen if the label was removed after the workflow started
       - name: Skip if no automatic label
         if: steps.pr_details.outputs.has_automatic_label != 'true'
         run: |
-          echo "PR #${{ matrix.pr_number }} does not have 'automatic' label, skipping"
-          exit 0
+          echo "::notice::PR #${{ matrix.pr_number }} does not have 'automatic' label, skipping"
+          exit 1
 
       - name: Checkout repository
         if: steps.pr_details.outputs.has_automatic_label == 'true' && steps.pr_details.outputs.is_same_repo == 'true'
@@ -204,14 +204,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          COMMENT="## Validation Passed
+          COMMENT="## ✅ Validation Passed
 
           All checks passed successfully:
 
           - \`brew audit ${{ steps.detect.outputs.audit_flag }} ${{ steps.detect.outputs.name }}\` - **Passed**
           - \`brew style ${{ steps.detect.outputs.name }}\` - **Passed**
 
-          This PR will be automatically approved and merged."
+          This PR will be automatically approved and merged.
+
+          ---
+          [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
           gh pr comment ${{ matrix.pr_number }} --repo ${{ github.repository }} --body "$COMMENT"
 
@@ -244,11 +247,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          COMMENT="## Validation Failed
+          COMMENT="## ❌ Validation Failed
 
           One or more checks failed. Please review the workflow logs for details.
 
-          This PR requires manual fixes before it can be merged."
+          This PR requires manual fixes before it can be merged.
+
+          ---
+          [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
           gh pr comment ${{ matrix.pr_number }} --repo ${{ github.repository }} --body "$COMMENT"
           
