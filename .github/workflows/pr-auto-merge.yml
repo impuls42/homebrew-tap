@@ -1,3 +1,14 @@
+# This workflow validates and automatically merges PRs with the "automatic" label
+# 
+# Prerequisites for full automation:
+# 1. Repository Settings → Actions → General → Workflow permissions:
+#    - Enable "Allow GitHub Actions to create and approve pull requests"
+# 2. Repository Settings → General → Pull Requests:
+#    - Enable "Allow auto-merge"
+# 3. (Optional) Branch protection: Don't require approvals, or set to 0 required reviewers
+#
+# The workflow will still work without these settings, but will require manual approval.
+
 name: PR Auto-Merge
 
 on:
@@ -100,9 +111,24 @@ jobs:
           - \`brew audit ${{ steps.detect.outputs.audit_flag }} ${{ steps.detect.outputs.name }}\` - **Passed**
           - \`brew style ${{ steps.detect.outputs.name }}\` - **Passed**
 
-          This PR is ready to be merged."
+          This PR will be automatically approved and merged."
 
           gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
+
+      - name: Approve PR
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Approving PR #${{ github.event.pull_request.number }}..."
+          # Note: GITHUB_TOKEN can approve PRs created by different workflows
+          # This PR is created by "Auto-Update" workflow, approved by "PR Auto-Merge" workflow
+          gh pr review ${{ github.event.pull_request.number }} --approve --body "✅ Automated approval after successful validation checks." 2>&1 || {
+            echo "Warning: Could not approve PR automatically. This may require repository settings to allow GitHub Actions to approve PRs."
+            echo "Alternative: PR is ready and validated - manual approval will enable auto-merge."
+            exit 0
+          }
+          echo "PR approved"
 
       - name: Enable auto-merge
         if: success()
@@ -111,7 +137,7 @@ jobs:
         run: |
           echo "Enabling auto-merge for PR #${{ github.event.pull_request.number }}..."
           gh pr merge ${{ github.event.pull_request.number }} --auto --squash --delete-branch
-          echo "Auto-merge enabled (squash strategy, will merge once approved)"
+          echo "Auto-merge enabled (squash strategy, will merge automatically)"
 
       - name: Add failure comment
         if: failure()
@@ -125,15 +151,21 @@ jobs:
           This PR requires manual fixes before it can be merged."
 
           gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
+          
+          # Request review from repository owner when validation fails
+          # This notifies the owner that manual intervention is needed
+          echo "Requesting review from repository owner due to validation failure..."
+          gh pr edit ${{ github.event.pull_request.number }} --add-reviewer "${{ github.repository_owner }}" 2>&1 || \
+            echo "Could not add reviewer (may already be assigned or other API limitation)"
 
       - name: Summary
         if: always()
         run: |
           echo "### Validation Results for ${{ steps.detect.outputs.name }} (${{ steps.detect.outputs.type }})" >> $GITHUB_STEP_SUMMARY
           if [ "${{ job.status }}" = "success" ]; then
-            echo "Status: Validation passed, auto-merge enabled" >> $GITHUB_STEP_SUMMARY
-            echo "The PR will be merged automatically once approved." >> $GITHUB_STEP_SUMMARY
+            echo "Status: ✅ Validation passed, PR approved and auto-merge enabled" >> $GITHUB_STEP_SUMMARY
+            echo "The PR will be merged automatically." >> $GITHUB_STEP_SUMMARY
           else
-            echo "Status: Validation failed" >> $GITHUB_STEP_SUMMARY
-            echo "Please review the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
+            echo "Status: ❌ Validation failed" >> $GITHUB_STEP_SUMMARY
+            echo "Repository owner has been notified. Please review the logs and fix any issues." >> $GITHUB_STEP_SUMMARY
           fi
