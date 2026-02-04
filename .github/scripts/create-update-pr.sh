@@ -155,6 +155,8 @@ if [ -n "$EXISTING_PR" ]; then
   # This is necessary because pushes from GITHUB_TOKEN don't trigger workflows
   echo "Re-triggering validation workflow..."
   gh pr edit "$EXISTING_PR" --remove-label "automatic" 2>/dev/null || true
+  # Wait for GitHub API to process the label removal before re-adding
+  # A short delay is necessary to ensure the label change triggers the workflow
   sleep 2
   gh pr edit "$EXISTING_PR" --add-label "automatic"
   

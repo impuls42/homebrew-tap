@@ -127,8 +127,10 @@ jobs:
           gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
           
           # Request review from repository owner when validation fails
+          # This notifies the owner that manual intervention is needed
           echo "Requesting review from repository owner due to validation failure..."
-          gh pr edit ${{ github.event.pull_request.number }} --add-reviewer "${{ github.repository_owner }}"
+          gh pr edit ${{ github.event.pull_request.number }} --add-reviewer "${{ github.repository_owner }}" 2>&1 || \
+            echo "Could not add reviewer (may already be assigned or other API limitation)"
 
       - name: Summary
         if: always()
