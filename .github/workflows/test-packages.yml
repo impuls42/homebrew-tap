@@ -168,6 +168,25 @@ jobs:
           
           echo "✅ Style check passed"
 
+      - name: Install build dependencies
+        run: |
+          set -e
+          
+          # Get all build dependencies for the formula
+          BUILD_DEPS=$(brew deps --include-build "${{ matrix.package.name }}" 2>/dev/null || echo "")
+          
+          # Install each build dependency
+          if [ -n "$BUILD_DEPS" ]; then
+            echo "Installing build dependencies: $BUILD_DEPS"
+            for dep in $BUILD_DEPS; do
+              echo "  Installing: $dep"
+              brew install "$dep" || echo "⚠️  Warning: Failed to install $dep (may already be installed)"
+            done
+            echo "✅ Build dependencies installed"
+          else
+            echo "ℹ️  No build dependencies detected"
+          fi
+
       - name: Test installation
         id: install
         run: |
@@ -183,26 +202,13 @@ jobs:
           else
             echo "Running: brew install ${{ matrix.package.name }}"
             
-            # For formulas, handle build dependencies gracefully
+            # For formulas, attempt installation
             if brew install "${{ matrix.package.name }}"; then
               echo "✅ Formula installed successfully"
               echo "installed=true" >> $GITHUB_OUTPUT
             else
-              echo "⚠️  Installation failed - checking for build dependency issues..."
-              
-              # Check if the formula has build dependencies
-              BUILD_DEPS=$(brew deps --include-build "${{ matrix.package.name }}" 2>/dev/null || echo "")
-              
-              # Check for platformio specifically (avoid false positives)
-              if echo "$BUILD_DEPS" | grep -q "^platformio$"; then
-                echo "⚠️  Formula requires PlatformIO which is not available in CI"
-                echo "This is expected - formula syntax and style have been validated"
-                echo "installed=false" >> $GITHUB_OUTPUT
-                exit 0
-              else
-                echo "❌ Installation failed unexpectedly"
-                exit 1
-              fi
+              echo "❌ Installation failed"
+              exit 1
             fi
           fi
 
@@ -244,9 +250,3 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Type**: ${{ matrix.package.type }}" >> $GITHUB_STEP_SUMMARY
           echo "**Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-          
-          if [ "${{ steps.install.outputs.installed }}" = "false" ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "ℹ️ Installation test skipped due to unavailable build dependencies (PlatformIO)" >> $GITHUB_STEP_SUMMARY
-            echo "✅ Syntax and style validation passed" >> $GITHUB_STEP_SUMMARY
-          fi
