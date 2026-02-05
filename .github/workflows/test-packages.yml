@@ -202,12 +202,15 @@ jobs:
           else
             echo "Running: brew install ${{ matrix.package.name }}"
             
-            # For formulas, attempt installation
-            if brew install "${{ matrix.package.name }}"; then
+            # For formulas, attempt installation with verbose output
+            if brew install -v "${{ matrix.package.name }}"; then
               echo "✅ Formula installed successfully"
               echo "installed=true" >> $GITHUB_OUTPUT
             else
               echo "❌ Installation failed"
+              echo ""
+              echo "Debug: Checking Homebrew cache for build output..."
+              find $(brew --cache) -type f -name "*${{ matrix.package.name }}*" 2>/dev/null || true
               exit 1
             fi
           fi

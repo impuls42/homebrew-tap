@@ -19,8 +19,17 @@ class FirefoxWebserial < Formula
       # Build the native binary using PlatformIO
       system "platformio", "run", "-e", env_name
 
+      # Check if the binary was created
+      build_path = ".pio/build/#{env_name}/program"
+      unless File.exist?(build_path)
+        # Debug: list what was created
+        puts "Debug: Checking build directory contents:"
+        system "find .pio -type f" if File.exist?(".pio")
+        raise "Build failed: Expected binary not found at #{build_path}"
+      end
+
       # Install the binary to Homebrew's bin directory
-      bin.install ".pio/build/#{env_name}/program" => "firefox-webserial"
+      bin.install build_path => "firefox-webserial"
     end
 
     # Create a helper script for post-installation setup
