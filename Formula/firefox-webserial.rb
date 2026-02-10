@@ -24,7 +24,7 @@ class FirefoxWebserial < Formula
       unless File.exist?(build_path)
         # Debug: list what was created
         puts "Debug: Checking build directory contents:"
-        system "find .pio -type f" if File.exist?(".pio")
+        system "find", ".pio", "-type", "f" if File.exist?(".pio")
         raise "Build failed: Expected binary not found at #{build_path}"
       end
 
