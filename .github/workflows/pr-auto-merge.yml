@@ -96,7 +96,7 @@ jobs:
           HEAD_REF=$(echo "$PR_DATA" | jq -r '.headRefName')
           HEAD_SHA=$(echo "$PR_DATA" | jq -r '.headRefOid')
           HAS_LABEL=$(echo "$PR_DATA" | jq -r '[.labels[].name] | contains(["automatic"])')
-          HEAD_REPO=$(echo "$PR_DATA" | jq -r '.headRepository.nameWithOwner')
+          HEAD_REPO=$(echo "$PR_DATA" | jq -r '.headRepository.nameWithOwner // "${{ github.repository }}"')
           
           echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
           echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
