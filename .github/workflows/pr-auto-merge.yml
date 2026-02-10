@@ -96,7 +96,11 @@ jobs:
           HEAD_REF=$(echo "$PR_DATA" | jq -r '.headRefName')
           HEAD_SHA=$(echo "$PR_DATA" | jq -r '.headRefOid')
           HAS_LABEL=$(echo "$PR_DATA" | jq -r '[.labels[].name] | contains(["automatic"])')
-          HEAD_REPO=$(echo "$PR_DATA" | jq -r '.headRepository.nameWithOwner')
+          # For same-repo PRs, headRepository is null, so we default to the current repository
+          HEAD_REPO=$(echo "$PR_DATA" | jq -r '.headRepository.nameWithOwner // empty')
+          if [ -z "$HEAD_REPO" ]; then
+            HEAD_REPO="${{ github.repository }}"
+          fi
           
           echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
           echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
