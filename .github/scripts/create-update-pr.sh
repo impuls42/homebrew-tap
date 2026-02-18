@@ -65,9 +65,9 @@ echo ""
 # --no-audit: Skip audit for casks that build .app structure in preflight (e.g., krokiet)
 
 # Determine if we need to skip audit
-AUDIT_FLAG=""
+AUDIT_FLAGS=()
 if [ "$TYPE" = "cask" ] && [ "$NAME" = "krokiet" ]; then
-  AUDIT_FLAG="--no-audit"
+  AUDIT_FLAGS=("--no-audit")
   echo "Skipping audit for $NAME (builds .app in preflight block)"
 fi
 
@@ -75,7 +75,7 @@ brew "$BREW_CMD" \
   --version="$NEW_VERSION" \
   --no-browse \
   --write-only \
-  $AUDIT_FLAG \
+  ${AUDIT_FLAGS[@]+"${AUDIT_FLAGS[@]}"} \
   "$NAME" || {
     echo "ERROR: brew $BREW_CMD failed for $NAME"
     exit 1
