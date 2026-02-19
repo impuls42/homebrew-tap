@@ -62,6 +62,7 @@ brew install <package-name>
 
 ## Packages
 
+- **mcp-router** - Desktop application for managing Model Context Protocol (MCP) servers
 - **toolhive-studio** - ToolHive Studio application
 - **sdrangel** - SDR software
 - **krokiet** - Messaging application
