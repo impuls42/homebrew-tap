@@ -34,7 +34,19 @@ class Spotctl < Formula
   end
 
   def install
-    bin.install Dir["spotctl*"].first => "spotctl"
+    if OS.mac?
+      if Hardware::CPU.intel?
+        bin.install "spotctl-darwin-amd64" => "spotctl"
+      else
+        bin.install "spotctl-darwin-arm64" => "spotctl"
+      end
+    elsif OS.linux?
+      if Hardware::CPU.intel?
+        bin.install "spotctl-linux-amd64" => "spotctl"
+      else
+        bin.install "spotctl-linux-arm64" => "spotctl"
+      end
+    end
   end
 
   def caveats
