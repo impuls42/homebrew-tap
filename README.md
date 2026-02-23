@@ -69,6 +69,7 @@ brew install <package-name>
 - **firefox-webserial** - Native messaging host for WebSerial API polyfill for Firefox
   - Available as a cask (prebuilt binaries): `brew install --cask firefox-webserial`
   - Available as a formula (build from source): `brew install firefox-webserial`
+- **spotctl** - CLI tool for managing Rackspace Spot resources
 
 ## Contributing
 
