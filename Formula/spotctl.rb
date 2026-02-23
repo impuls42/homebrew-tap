@@ -11,40 +11,40 @@ class Spotctl < Formula
 
   on_macos do
     on_intel do
-      url "https://github.com/rackspace-spot/spotctl/releases/download/v0.1.1/spotctl-darwin-amd64"
+      url "https://github.com/rackspace-spot/spotctl/releases/download/v#{version}/spotctl-darwin-amd64"
       sha256 "82ae1b7cf2c4b1b9fa41ea7b870ce26a6dd3b0519cf603c34953c61452b8152c"
     end
 
     on_arm do
-      url "https://github.com/rackspace-spot/spotctl/releases/download/v0.1.1/spotctl-darwin-arm64"
+      url "https://github.com/rackspace-spot/spotctl/releases/download/v#{version}/spotctl-darwin-arm64"
       sha256 "cf19c982cf7a831a0c1884abccbcbc88655c8b3bea7fe277d4ec697cf19606d3"
     end
   end
 
   on_linux do
     on_intel do
-      url "https://github.com/rackspace-spot/spotctl/releases/download/v0.1.1/spotctl-linux-amd64"
+      url "https://github.com/rackspace-spot/spotctl/releases/download/v#{version}/spotctl-linux-amd64"
       sha256 "c099e6fa3b2a1b885a1a52b249efb4be842480a4bc5f1353c94779bb2886472a"
     end
 
     on_arm do
-      url "https://github.com/rackspace-spot/spotctl/releases/download/v0.1.1/spotctl-linux-arm64"
+      url "https://github.com/rackspace-spot/spotctl/releases/download/v#{version}/spotctl-linux-arm64"
       sha256 "c372f9c272ae0eb9d0ae87c7afc80df12073c464335e8e22e500a2bd11dc67ac"
     end
   end
 
   def install
     if OS.mac?
-      if Hardware::CPU.intel?
-        bin.install "spotctl-darwin-amd64" => "spotctl"
-      else
+      if Hardware::CPU.arm?
         bin.install "spotctl-darwin-arm64" => "spotctl"
+      elsif Hardware::CPU.intel?
+        bin.install "spotctl-darwin-amd64" => "spotctl"
       end
     elsif OS.linux?
-      if Hardware::CPU.intel?
-        bin.install "spotctl-linux-amd64" => "spotctl"
-      else
+      if Hardware::CPU.arm?
         bin.install "spotctl-linux-arm64" => "spotctl"
+      elsif Hardware::CPU.intel?
+        bin.install "spotctl-linux-amd64" => "spotctl"
       end
     end
   end
