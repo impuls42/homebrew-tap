@@ -34,31 +34,24 @@ class Spotctl < Formula
   end
 
   def install
-    if OS.mac?
-      if Hardware::CPU.arm?
-        bin.install "spotctl-darwin-arm64" => "spotctl"
-      elsif Hardware::CPU.intel?
-        bin.install "spotctl-darwin-amd64" => "spotctl"
-      end
-    elsif OS.linux?
-      if Hardware::CPU.arm?
-        bin.install "spotctl-linux-arm64" => "spotctl"
-      elsif Hardware::CPU.intel?
-        bin.install "spotctl-linux-amd64" => "spotctl"
-      end
-    end
+    # The downloaded file will be named spotctl-<os>-<arch>
+    # Install it as "spotctl" in the bin directory
+    binary = Dir["spotctl-*"].first
+    bin.install binary => "spotctl"
   end
 
   def caveats
     <<~EOS
-      To use spotctl, you need to authenticate with your Spot API token.
-      Set the SPOT_TOKEN environment variable or use the --token flag.
+      spotctl requires authentication with your Spot API token.
+      You can authenticate by:
+        - Setting the SPOT_TOKEN environment variable, or
+        - Using the --token flag with each command
 
-      For more information, see: https://github.com/rackspace-spot/spotctl
+      For more information, visit: https://github.com/rackspace-spot/spotctl
     EOS
   end
 
   test do
-    system "#{bin}/spotctl", "--version"
+    assert_match version.to_s, shell_output("#{bin}/spotctl --version")
   end
 end
