@@ -11,7 +11,7 @@ class Spotctl < Formula
 
   # Single source of truth for all release artifacts.
   # Key format: "<os>-<arch>" — mirrors the upstream binary naming convention.
-  RELEASE_BASE = "https://github.com/rackspace-spot/spotctl/releases/download"
+  RELEASE_BASE = "https://github.com/rackspace-spot/spotctl/releases/download".freeze
   CHECKSUMS = {
     "darwin-amd64" => "82ae1b7cf2c4b1b9fa41ea7b870ce26a6dd3b0519cf603c34953c61452b8152c",
     "darwin-arm64" => "cf19c982cf7a831a0c1884abccbcbc88655c8b3bea7fe277d4ec697cf19606d3",
