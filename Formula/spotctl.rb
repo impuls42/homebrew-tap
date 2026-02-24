@@ -39,9 +39,6 @@ class Spotctl < Formula
     os   = OS.mac? ? "darwin" : "linux"
     arch = Hardware::CPU.arm? ? "arm64" : "amd64"
     bin.install "spotctl-#{os}-#{arch}" => "spotctl"
-
-    # Generate shell completions if the binary supports them
-    generate_completions_from_executable(bin/"spotctl", "completion")
   end
 
   def caveats
