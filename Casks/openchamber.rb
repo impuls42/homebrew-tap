@@ -15,6 +15,8 @@ cask "openchamber" do
     strategy :github_releases
   end
 
+  depends_on macos: ">= :sonoma"
+
   app "OpenChamber.app"
 
   zap trash: [
