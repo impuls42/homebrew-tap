@@ -150,11 +150,11 @@ jobs:
           set -e
           
           if [ "${{ matrix.package.type }}" = "cask" ]; then
-            echo "Running: brew audit --cask ${{ matrix.package.name }}"
-            brew audit --cask "${{ matrix.package.name }}"
+            echo "Running: brew audit --cask impuls42/tap/${{ matrix.package.name }}"
+            brew audit --cask "impuls42/tap/${{ matrix.package.name }}"
           else
-            echo "Running: brew audit --formula ${{ matrix.package.name }}"
-            brew audit --formula "${{ matrix.package.name }}"
+            echo "Running: brew audit --formula impuls42/tap/${{ matrix.package.name }}"
+            brew audit --formula "impuls42/tap/${{ matrix.package.name }}"
           fi
           
           echo "✅ Audit passed"
@@ -163,8 +163,8 @@ jobs:
         run: |
           set -e
           
-          echo "Running: brew style ${{ matrix.package.name }}"
-          brew style "${{ matrix.package.name }}"
+          echo "Running: brew style impuls42/tap/${{ matrix.package.name }}"
+          brew style "impuls42/tap/${{ matrix.package.name }}"
           
           echo "✅ Style check passed"
 
@@ -195,15 +195,15 @@ jobs:
           echo "Testing installation of ${{ matrix.package.name }}..."
 
           if [ "${{ matrix.package.type }}" = "cask" ]; then
-            echo "Running: brew install --cask ${{ matrix.package.name }}"
-            brew install --cask "${{ matrix.package.name }}"
+            echo "Running: brew install --cask impuls42/tap/${{ matrix.package.name }}"
+            brew install --cask "impuls42/tap/${{ matrix.package.name }}"
             echo "✅ Cask installed successfully"
             echo "installed=true" >> $GITHUB_OUTPUT
           else
-            echo "Running: brew install ${{ matrix.package.name }}"
+            echo "Running: brew install impuls42/tap/${{ matrix.package.name }}"
             
             # For formulas, attempt installation with verbose output
-            if brew install -v "${{ matrix.package.name }}"; then
+            if brew install -v "impuls42/tap/${{ matrix.package.name }}"; then
               echo "✅ Formula installed successfully"
               echo "installed=true" >> $GITHUB_OUTPUT
             else
@@ -224,12 +224,12 @@ jobs:
             # For casks, check if app or binary was installed
             # This is a basic check - might need customization per package
             echo "Verifying cask installation..."
-            brew list --cask "${{ matrix.package.name }}"
+            brew list --cask "impuls42/tap/${{ matrix.package.name }}"
             echo "✅ Cask verified"
           else
             # For formulas, check if binary exists
             echo "Verifying formula installation..."
-            brew list --formula "${{ matrix.package.name }}"
+            brew list --formula "impuls42/tap/${{ matrix.package.name }}"
             echo "✅ Formula verified"
           fi
 
@@ -239,9 +239,9 @@ jobs:
           echo "Cleaning up..."
           
           if [ "${{ matrix.package.type }}" = "cask" ]; then
-            brew uninstall --cask "${{ matrix.package.name }}" 2>/dev/null || true
+            brew uninstall --cask "impuls42/tap/${{ matrix.package.name }}" 2>/dev/null || true
           else
-            brew uninstall --formula "${{ matrix.package.name }}" 2>/dev/null || true
+            brew uninstall --formula "impuls42/tap/${{ matrix.package.name }}" 2>/dev/null || true
           fi
           
           echo "✅ Cleanup complete"
