@@ -5,11 +5,11 @@ cask "xpra" do
   sha256 arm:   "b4b51c606cd749d93d664b081f9e48f86d1e86a155caa7b8e3f55c16dbcd590e",
          intel: "b59119b255c615fcc2077c2154ca47646c7726d0a5142f4b12a8ca4c6b4a1640"
 
-  url "https://xpra.org/dists/MacOS/#{arch}/Xpra-#{arch}-#{version.csv.first}-r#{version.csv.second}.dmg",
-      verified: "xpra.org/"
+  revision_suffix = "-r#{version.csv.second}" unless version.csv.second.empty?
+  url "https://xpra.org/dists/MacOS/#{arch}/Xpra-#{arch}-#{version.csv.first}#{revision_suffix}.dmg"
   name "Xpra"
   desc "Screen and application forwarding system"
-  homepage "https://github.com/Xpra-org/xpra/"
+  homepage "https://xpra.org/"
 
   livecheck do
     url "https://xpra.org/dists/MacOS/#{arch}/"
@@ -27,10 +27,14 @@ cask "xpra" do
 
   shimscript = "#{HOMEBREW_PREFIX}/bin/xpra"
 
+  preflight do
+    FileUtils.rm shimscript, force: true
+  end
+
   postflight do
     File.write shimscript, <<~EOS
-        #!/bin/sh
-        exec #{appdir}/Xpra.app/Contents/MacOS/Xpra "$@"
+      #!/bin/sh
+      exec #{appdir}/Xpra.app/Contents/MacOS/Xpra "$@"
     EOS
     File.chmod 0755, shimscript
 
@@ -40,9 +44,7 @@ cask "xpra" do
                    args: ["-dr", "com.apple.quarantine", "#{appdir}/Xpra.app"]
   end
 
-  preflight do
-  File.delete shimscript if File.exist? shimscript
-  end
+  uninstall delete: "#{HOMEBREW_PREFIX}/bin/xpra"
 
   zap delete: "/Library/Application Support/Xpra",
       trash:  [
