@@ -6,8 +6,7 @@ cask "xpra" do
          intel: "b59119b255c615fcc2077c2154ca47646c7726d0a5142f4b12a8ca4c6b4a1640"
 
   revision_suffix = "-r#{version.csv.second}" unless version.csv.second.empty?
-  url "https://xpra.org/dists/MacOS/#{arch}/Xpra-#{arch}-#{version.csv.first}#{revision_suffix}.dmg",
-      verified: "xpra.org/"
+  url "https://xpra.org/dists/MacOS/#{arch}/Xpra-#{arch}-#{version.csv.first}#{revision_suffix}.dmg"
   name "Xpra"
   desc "Screen and application forwarding system"
   homepage "https://xpra.org/"
