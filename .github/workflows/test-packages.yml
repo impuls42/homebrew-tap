@@ -168,6 +168,41 @@ jobs:
           
           echo "✅ Style check passed"
 
+      - name: Test livecheck
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+
+          if [ "${{ matrix.package.type }}" = "cask" ]; then
+            echo "Running: brew livecheck --cask impuls42/tap/${{ matrix.package.name }}"
+            LIVECHECK_OUTPUT=$(brew livecheck --json --cask "impuls42/tap/${{ matrix.package.name }}" 2>&1) || true
+          else
+            echo "Running: brew livecheck --formula impuls42/tap/${{ matrix.package.name }}"
+            LIVECHECK_OUTPUT=$(brew livecheck --json --formula "impuls42/tap/${{ matrix.package.name }}" 2>&1) || true
+          fi
+
+          echo "Livecheck output: $LIVECHECK_OUTPUT"
+
+          # Extract JSON from output (may contain warnings/gem install text)
+          JSON_CONTENT=$(echo "$LIVECHECK_OUTPUT" | sed -n '/^\[/,/^\]/p')
+
+          if [ -z "$JSON_CONTENT" ]; then
+            echo "❌ Livecheck failed: no JSON output returned"
+            exit 1
+          fi
+
+          # Check that livecheck returned valid version data
+          LATEST_VERSION=$(echo "$JSON_CONTENT" | jq -r '.[0].version.latest // empty' 2>/dev/null || echo "")
+
+          if [ -z "$LATEST_VERSION" ]; then
+            echo "❌ Livecheck failed: could not determine latest version"
+            exit 1
+          fi
+
+          echo "Latest version detected: $LATEST_VERSION"
+          echo "✅ Livecheck passed"
+
       - name: Install build dependencies
         run: |
           set -e

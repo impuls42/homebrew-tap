@@ -5,19 +5,19 @@ cask "xpra" do
   sha256 arm:   "b4b51c606cd749d93d664b081f9e48f86d1e86a155caa7b8e3f55c16dbcd590e",
          intel: "b59119b255c615fcc2077c2154ca47646c7726d0a5142f4b12a8ca4c6b4a1640"
 
-  revision_suffix = "-r#{version.csv.second}" unless version.csv.second.empty?
+  revision_suffix = version.csv.second.present? ? "-r#{version.csv.second}" : ""
   url "https://xpra.org/dists/MacOS/#{arch}/Xpra-#{arch}-#{version.csv.first}#{revision_suffix}.dmg"
   name "Xpra"
   desc "Screen and application forwarding system"
   homepage "https://xpra.org/"
 
   livecheck do
-    url "https://xpra.org/dists/MacOS/#{arch}/"
-    regex(/href=.*?Xpra-#{arch}[._-]v?(\d+(?:\.\d+)+)(?:[._-]r(\d+))?\.dmg/i)
-    strategy :page_match do |page, regex|
-      page.scan(regex).map do |match|
-        match[1] ? "#{match[0]},#{match[1]}" : match[0]
-      end
+    url "https://github.com/Xpra-org/xpra"
+    strategy :github_latest do |json, _regex|
+      version = json["tag_name"]&.sub(/\Av/i, "")
+      next if version.blank?
+
+      "#{version},0"
     end
   end
 
