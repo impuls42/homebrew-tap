@@ -215,7 +215,7 @@ jobs:
             echo "Installing build dependencies: $BUILD_DEPS"
             for dep in $BUILD_DEPS; do
               echo "  Installing: $dep"
-              brew install "impuls42/tap/$dep" || echo "⚠️  Warning: Failed to install $dep (may already be installed)"
+              brew install "$dep" || echo "⚠️  Warning: Failed to install $dep (may already be installed)"
             done
             echo "✅ Build dependencies installed"
           else
