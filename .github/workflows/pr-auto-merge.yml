@@ -185,7 +185,7 @@ jobs:
           echo "Running: brew audit ${{ steps.detect.outputs.audit_flag }} ${{ steps.detect.outputs.name }}"
           echo ""
 
-          brew audit ${{ steps.detect.outputs.audit_flag }} "${{ steps.detect.outputs.name }}"
+          brew audit ${{ steps.detect.outputs.audit_flag }} "impuls42/tap/${{ steps.detect.outputs.name }}"
 
           echo ""
           echo "Audit passed"
@@ -195,10 +195,10 @@ jobs:
         run: |
           set -e
 
-          echo "Running: brew style ${{ steps.detect.outputs.name }}"
+          echo "Running: brew style impuls42/tap/${{ steps.detect.outputs.name }}"
           echo ""
 
-          brew style "${{ steps.detect.outputs.name }}"
+          brew style "impuls42/tap/${{ steps.detect.outputs.name }}"
 
           echo ""
           echo "Style check passed"
@@ -213,20 +213,20 @@ jobs:
           echo ""
 
           if [ "${{ steps.detect.outputs.type }}" = "cask" ]; then
-            echo "Running: brew install --cask ${{ steps.detect.outputs.name }}"
-            brew install --cask "${{ steps.detect.outputs.name }}"
+            echo "Running: brew install --cask impuls42/tap/${{ steps.detect.outputs.name }}"
+            brew install --cask "impuls42/tap/${{ steps.detect.outputs.name }}"
             echo "installed=true" >> $GITHUB_OUTPUT
           else
-            echo "Running: brew install ${{ steps.detect.outputs.name }}"
+            echo "Running: brew install impuls42/tap/${{ steps.detect.outputs.name }}"
             # For formulas, we need to handle build dependencies
             # Some formulas like firefox-webserial require platformio which may not be available
-            if brew install "${{ steps.detect.outputs.name }}"; then
+            if brew install "impuls42/tap/${{ steps.detect.outputs.name }}"; then
               echo "installed=true" >> $GITHUB_OUTPUT
             else
               echo "Installation failed - checking if this is due to unavailable build dependencies..."
               
               # Check if the formula depends on platformio or other unavailable tools
-              BUILD_DEPS=$(brew deps --include-build "${{ steps.detect.outputs.name }}" 2>/dev/null || echo "")
+              BUILD_DEPS=$(brew deps --include-build "impuls42/tap/${{ steps.detect.outputs.name }}" 2>/dev/null || echo "")
               if echo "$BUILD_DEPS" | grep -q "^platformio$"; then
                 echo "Formula requires PlatformIO which is not available in CI environment"
                 echo "Skipping installation test - formula syntax and style have been validated"
@@ -248,9 +248,9 @@ jobs:
           echo "Cleaning up test installation..."
           
           if [ "${{ steps.detect.outputs.type }}" = "cask" ]; then
-            brew uninstall --cask "${{ steps.detect.outputs.name }}" 2>/dev/null || true
+            brew uninstall --cask "impuls42/tap/${{ steps.detect.outputs.name }}" 2>/dev/null || true
           else
-            brew uninstall "${{ steps.detect.outputs.name }}" 2>/dev/null || true
+            brew uninstall "impuls42/tap/${{ steps.detect.outputs.name }}" 2>/dev/null || true
           fi
           
           echo "Cleanup complete"
@@ -264,8 +264,8 @@ jobs:
 
           All checks passed successfully:
 
-          - \`brew audit ${{ steps.detect.outputs.audit_flag }} ${{ steps.detect.outputs.name }}\` - **Passed**
-          - \`brew style ${{ steps.detect.outputs.name }}\` - **Passed**
+          - \`brew audit impuls42/tap/${{ steps.detect.outputs.audit_flag }} ${{ steps.detect.outputs.name }}\` - **Passed**
+          - \`brew style impuls42/tap/${{ steps.detect.outputs.name }}\` - **Passed**
           - Installation test - **Passed**
 
           This PR will be automatically approved and merged.

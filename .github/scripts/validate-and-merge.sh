@@ -49,10 +49,10 @@ echo "Found PR #$PR_NUMBER for branch $CURRENT_BRANCH"
 echo ""
 
 # Run brew audit
-echo "Running: brew audit $AUDIT_FLAG $NAME"
+echo "Running: brew audit $AUDIT_FLAG impuls42/tap/$NAME"
 echo ""
 
-AUDIT_OUTPUT=$(brew audit $AUDIT_FLAG "$NAME" 2>&1) || AUDIT_FAILED=true
+AUDIT_OUTPUT=$(brew audit $AUDIT_FLAG "impuls42/tap/$NAME" 2>&1) || AUDIT_FAILED=true
 
 if [ "${AUDIT_FAILED:-false}" = "true" ]; then
   echo "Audit failed for $NAME"
@@ -64,7 +64,7 @@ if [ "${AUDIT_FAILED:-false}" = "true" ]; then
   # Add comment to PR about validation failure
   COMMENT="## Validation Failed
 
-\`brew audit $AUDIT_FLAG $NAME\` failed with the following errors:
+\`brew audit $AUDIT_FLAG impuls42/tap/$NAME\` failed with the following errors:
 
 \`\`\`
 $AUDIT_OUTPUT
@@ -83,10 +83,10 @@ echo "Audit passed"
 echo ""
 
 # Run brew style
-echo "Running: brew style --fix $NAME"
+echo "Running: brew style --fix impuls42/tap/$NAME"
 echo ""
 
-STYLE_OUTPUT=$(brew style --fix "$NAME" 2>&1) || STYLE_FAILED=true
+STYLE_OUTPUT=$(brew style --fix "impuls42/tap/$NAME" 2>&1) || STYLE_FAILED=true
 
 if [ "${STYLE_FAILED:-false}" = "true" ]; then
   echo "Style check reported issues"
@@ -123,8 +123,8 @@ SUCCESS_COMMENT="## Validation Passed
 
 All checks passed successfully:
 
-- \`brew audit $AUDIT_FLAG $NAME\` - **Passed**
-- \`brew style --fix $NAME\` - **Passed**
+- \`brew audit $AUDIT_FLAG impuls42/tap/$NAME\` - **Passed**
+- \`brew style --fix impuls42/tap/$NAME\` - **Passed**
 
 This PR is ready for auto-merge."
 
