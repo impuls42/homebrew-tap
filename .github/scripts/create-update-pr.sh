@@ -76,7 +76,7 @@ brew "$BREW_CMD" \
   --no-browse \
   --write-only \
   ${AUDIT_FLAGS[@]+"${AUDIT_FLAGS[@]}"} \
-  "$NAME" || {
+  "impuls42/tap/$NAME" || {
     echo "ERROR: brew $BREW_CMD failed for $NAME"
     exit 1
   }

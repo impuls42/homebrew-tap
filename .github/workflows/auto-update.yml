@@ -99,9 +99,9 @@ jobs:
           # Get the latest version from livecheck
           # Use appropriate flag based on type
           if [ "${{ matrix.item.type }}" = "formula" ]; then
-            LIVECHECK_JSON=$(brew livecheck --json --formula ${{ matrix.item.name }} --newer-only 2>&1) || true
+            LIVECHECK_JSON=$(brew livecheck --json --formula "impuls42/tap/${{ matrix.item.name }}" --newer-only 2>&1) || true
           else
-            LIVECHECK_JSON=$(brew livecheck --json --cask ${{ matrix.item.name }} --newer-only 2>&1) || true
+            LIVECHECK_JSON=$(brew livecheck --json --cask "impuls42/tap/${{ matrix.item.name }}" --newer-only 2>&1) || true
           fi
           echo "Livecheck JSON: $LIVECHECK_JSON"
 

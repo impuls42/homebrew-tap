@@ -208,7 +208,7 @@ jobs:
           set -e
           
           # Get all build dependencies for the formula
-          BUILD_DEPS=$(brew deps --include-build "${{ matrix.package.name }}" 2>/dev/null || echo "")
+          BUILD_DEPS=$(brew deps --include-build "impuls42/tap/${{ matrix.package.name }}" 2>/dev/null || echo "")
           
           # Install each build dependency
           if [ -n "$BUILD_DEPS" ]; then
