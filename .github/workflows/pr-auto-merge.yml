@@ -182,7 +182,7 @@ jobs:
         run: |
           set -e
 
-          echo "Running: brew audit ${{ steps.detect.outputs.audit_flag }} ${{ steps.detect.outputs.name }}"
+          echo "Running: brew audit ${{ steps.detect.outputs.audit_flag }} impuls42/tap/${{ steps.detect.outputs.name }}"
           echo ""
 
           brew audit ${{ steps.detect.outputs.audit_flag }} "impuls42/tap/${{ steps.detect.outputs.name }}"
