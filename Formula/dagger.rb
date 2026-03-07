@@ -1,5 +1,5 @@
 class Dagger < Formula
-  desc "An integrated platform to orchestrate the delivery of applications"
+  desc "Integrated platform to orchestrate the delivery of applications"
   homepage "https://dagger.io"
   version "0.20.1"
 
