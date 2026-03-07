@@ -1,5 +1,5 @@
 class Dagger < Formula
-  desc "Dagger is an integrated platform to orchestrate the delivery of applications"
+  desc "An integrated platform to orchestrate the delivery of applications"
   homepage "https://dagger.io"
   version "0.20.1"
 
@@ -32,12 +32,10 @@ class Dagger < Formula
   end
 
   def install
-    os   = OS.mac? ? "darwin" : "linux"
-    arch = Hardware::CPU.arm? ? "arm64" : "amd64"
     bin.install "./dagger"
   end
 
   test do
-    system "#{bin}/dagger version"
+    system "#{bin}/dagger", "version"
   end
 end
