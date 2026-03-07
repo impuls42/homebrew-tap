@@ -2,6 +2,7 @@ class Dagger < Formula
   desc "Integrated platform to orchestrate the delivery of applications"
   homepage "https://dagger.io"
   version "0.20.1"
+  license "Apache-2.0"
 
   livecheck do
     url :stable
@@ -36,6 +37,6 @@ class Dagger < Formula
   end
 
   test do
-    system "#{bin}/dagger", "version"
+    assert_match version.to_s, shell_output("#{bin}/dagger version")
   end
 end
