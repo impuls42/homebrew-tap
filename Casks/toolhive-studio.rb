@@ -1,9 +1,9 @@
 cask "toolhive-studio" do
   arch arm: "arm64", intel: "x64"
 
-  version "0.22.0"
-  sha256 arm:   "44e03b664cf4e23c4f95a7fef24651a7555fe875ba7c6987208ccf9cbb8f2d8d",
-         intel: "587c53aded68a717645c0ebd63bc199ca3e55b7561d7641c5173871c73324cbb"
+  version "0.23.0"
+  sha256 arm:   "69ee4341c9eb33bbe76ff2d97c297e0ca937ad8248b08e6b731ad6e28d52b976",
+         intel: "2a96ce36f5ad8a6f4cb6aaa74c1428ca63bbf3e51571cbb8fc6226bc81e4b72e"
 
   url "https://github.com/stacklok/toolhive-studio/releases/download/v#{version}/ToolHive-#{arch}.dmg",
       verified: "github.com/stacklok/toolhive-studio/"
