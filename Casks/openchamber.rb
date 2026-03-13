@@ -1,9 +1,9 @@
 cask "openchamber" do
   arch arm: "aarch64", intel: "x86_64"
 
-  version "1.8.5"
-  sha256 arm:   "fed7a0d3eb22ad220d506cdf8c06f6eb1977060f6cc1b88472bd4fe86528cee3",
-         intel: "515b0f58501c6d714c1c1ea75e004950b86687661e36368b1bd52c71e90eec1a"
+  version "1.8.6"
+  sha256 arm:   "5578d6de3050d090eda0d3def72b9f9297621d87413a8365db3ea9fb92f1be48",
+         intel: "9f49ba7d5d37bf96ed76477bb82c1480dd39e07cad26fd2f44b5d8c6dbcbb4cd"
 
   url "https://github.com/btriapitsyn/openchamber/releases/download/v#{version}/OpenChamber_#{version}_darwin-#{arch}.dmg"
   name "OpenChamber"
