@@ -1,7 +1,7 @@
 class Dagger < Formula
   desc "Integrated platform to orchestrate the delivery of applications"
   homepage "https://dagger.io"
-  version "0.20.1"
+  version "0.20.3"
   license "Apache-2.0"
 
   livecheck do
@@ -15,8 +15,8 @@ class Dagger < Formula
       sha256 "1a44b55783dcc0ad22a913cc54ddcae4e682b4748a9be44fefb4b18628006b8a"
     end
     on_arm do
-      url "https://github.com/dagger/dagger/releases/download/v0.20.1/dagger_v0.20.1_darwin_arm64.tar.gz"
-      sha256 "e735d38d50834f37265605a5ef6955a2f28bff4997f1e324d6de55cd8f0d5215"
+      url "https://github.com/dagger/dagger/releases/download/v0.20.3/dagger_v0.20.3_darwin_arm64.tar.gz"
+      sha256 "b6ce97009000c44439dc18eb55c99b41c497c8fe95d0b7e49b237f9ec5ccc1f5"
     end
   end
 
