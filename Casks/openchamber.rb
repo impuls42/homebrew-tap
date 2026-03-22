@@ -15,7 +15,7 @@ cask "openchamber" do
     strategy :github_releases
   end
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: ">= :ventura"
 
   app "OpenChamber.app"
 
