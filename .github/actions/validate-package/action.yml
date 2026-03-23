@@ -1,0 +1,115 @@
+name: Validate Package
+description: Run brew audit, style check, and installation test for a package
+
+inputs:
+  name:
+    description: Package name
+    required: true
+  type:
+    description: "Package type: cask or formula"
+    required: true
+  run-livecheck:
+    description: Run brew livecheck test
+    required: false
+    default: "false"
+
+outputs:
+  installed:
+    description: Whether the package was successfully installed
+    value: ${{ steps.install.outputs.installed }}
+
+runs:
+  using: composite
+  steps:
+    - name: Run brew audit
+      shell: bash
+      run: |
+        if [ "${{ inputs.type }}" = "cask" ]; then
+          brew audit --cask "impuls42/tap/${{ inputs.name }}"
+        else
+          brew audit --formula "impuls42/tap/${{ inputs.name }}"
+        fi
+
+    - name: Run brew style
+      shell: bash
+      run: brew style "impuls42/tap/${{ inputs.name }}"
+
+    - name: Test livecheck
+      if: inputs.run-livecheck == 'true'
+      shell: bash
+      env:
+        HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
+      run: |
+        if [ "${{ inputs.type }}" = "cask" ]; then
+          TYPE_FLAG="--cask"
+        else
+          TYPE_FLAG="--formula"
+        fi
+
+        LIVECHECK_OUTPUT=$(brew livecheck --json $TYPE_FLAG "impuls42/tap/${{ inputs.name }}" 2>&1) || true
+        JSON_CONTENT=$(echo "$LIVECHECK_OUTPUT" | sed -n '/^\[/,/^\]/p')
+
+        if [ -z "$JSON_CONTENT" ]; then
+          echo "Livecheck failed: no JSON output"
+          exit 1
+        fi
+
+        LATEST=$(echo "$JSON_CONTENT" | jq -r '.[0].version.latest // empty' 2>/dev/null || echo "")
+        if [ -z "$LATEST" ]; then
+          echo "Livecheck failed: could not determine version"
+          exit 1
+        fi
+
+        echo "Latest version: $LATEST"
+
+    - name: Install build dependencies
+      shell: bash
+      run: |
+        DEPS=$(brew deps --include-build "impuls42/tap/${{ inputs.name }}" 2>/dev/null || echo "")
+        if [ -n "$DEPS" ]; then
+          echo "Installing build dependencies: $DEPS"
+          for dep in $DEPS; do
+            brew install "$dep" 2>/dev/null || true
+          done
+        fi
+
+    - name: Test installation
+      id: install
+      shell: bash
+      run: |
+        if [ "${{ inputs.type }}" = "cask" ]; then
+          brew install --cask "impuls42/tap/${{ inputs.name }}"
+          echo "installed=true" >> $GITHUB_OUTPUT
+        else
+          if brew install "impuls42/tap/${{ inputs.name }}"; then
+            echo "installed=true" >> $GITHUB_OUTPUT
+          else
+            DEPS=$(brew deps --include-build "impuls42/tap/${{ inputs.name }}" 2>/dev/null || echo "")
+            if echo "$DEPS" | grep -q "^platformio$"; then
+              echo "Skipping: requires PlatformIO (unavailable in CI)"
+              echo "installed=false" >> $GITHUB_OUTPUT
+            else
+              exit 1
+            fi
+          fi
+        fi
+
+    - name: Verify installation
+      if: steps.install.outputs.installed == 'true'
+      shell: bash
+      run: |
+        if [ "${{ inputs.type }}" = "cask" ]; then
+          brew list --cask "impuls42/tap/${{ inputs.name }}"
+        else
+          brew list --formula "impuls42/tap/${{ inputs.name }}"
+        fi
+
+    - name: Cleanup
+      if: always() && steps.install.outputs.installed == 'true'
+      shell: bash
+      run: |
+        if [ "${{ inputs.type }}" = "cask" ]; then
+          brew uninstall --cask "impuls42/tap/${{ inputs.name }}" 2>/dev/null || true
+        else
+          brew uninstall --formula "impuls42/tap/${{ inputs.name }}" 2>/dev/null || true
+        fi

@@ -41,7 +41,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for changed files detection
+          fetch-depth: 0
 
       - name: Detect packages
         id: detect
@@ -54,9 +54,8 @@ jobs:
           if [ -n "${{ inputs.package_name }}" ]; then
             TYPE="${{ inputs.package_type }}"
             NAME="${{ inputs.package_name }}"
-            
+
             if [ "$TYPE" = "all" ]; then
-              # Check both cask and formula
               if [ -f "Casks/${NAME}.rb" ]; then
                 PACKAGES=$(echo "$PACKAGES" | jq -c '. + [{name: "'$NAME'", type: "cask"}]')
               fi
@@ -70,7 +69,6 @@ jobs:
             fi
           # If triggered by PR or push, detect changed files
           elif [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.event_name }}" = "push" ]; then
-            # Get changed files
             if [ "${{ github.event_name }}" = "pull_request" ]; then
               BASE_SHA="${{ github.event.pull_request.base.sha }}"
               HEAD_SHA="${{ github.event.pull_request.head.sha }}"
@@ -80,32 +78,28 @@ jobs:
             fi
 
             CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" || echo "")
-            
-            # Find changed casks and formulas
+
             CASK_FILES=$(echo "$CHANGED_FILES" | grep -E '^Casks/.*\.rb$' || echo "")
             FORMULA_FILES=$(echo "$CHANGED_FILES" | grep -E '^Formula/.*\.rb$' || echo "")
-            
-            # Build packages array
+
             for file in $CASK_FILES; do
               name=$(basename "$file" .rb)
               PACKAGES=$(echo "$PACKAGES" | jq -c '. + [{name: "'$name'", type: "cask"}]')
             done
-            
+
             for file in $FORMULA_FILES; do
               name=$(basename "$file" .rb)
               PACKAGES=$(echo "$PACKAGES" | jq -c '. + [{name: "'$name'", type: "formula"}]')
             done
           # Otherwise test all packages
           else
-            # List all casks
             for file in Casks/*.rb; do
               if [ -f "$file" ]; then
                 name=$(basename "$file" .rb)
                 PACKAGES=$(echo "$PACKAGES" | jq -c '. + [{name: "'$name'", type: "cask"}]')
               fi
             done
-            
-            # List all formulas
+
             for file in Formula/*.rb; do
               if [ -f "$file" ]; then
                 name=$(basename "$file" .rb)
@@ -133,158 +127,19 @@ jobs:
         package: ${{ fromJson(needs.detect-packages.outputs.packages) }}
       fail-fast: false
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-tap
 
-      - name: Set up Homebrew
-        run: |
-          echo "Homebrew already installed on macOS runner"
-          brew --version
-
-      - name: Tap this repository
-        run: |
-          brew tap impuls42/tap "$(pwd)"
-
-      - name: Run brew audit
-        run: |
-          set -e
-          
-          if [ "${{ matrix.package.type }}" = "cask" ]; then
-            echo "Running: brew audit --cask impuls42/tap/${{ matrix.package.name }}"
-            brew audit --cask "impuls42/tap/${{ matrix.package.name }}"
-          else
-            echo "Running: brew audit --formula impuls42/tap/${{ matrix.package.name }}"
-            brew audit --formula "impuls42/tap/${{ matrix.package.name }}"
-          fi
-          
-          echo "✅ Audit passed"
-
-      - name: Run brew style
-        run: |
-          set -e
-          
-          echo "Running: brew style impuls42/tap/${{ matrix.package.name }}"
-          brew style "impuls42/tap/${{ matrix.package.name }}"
-          
-          echo "✅ Style check passed"
-
-      - name: Test livecheck
-        env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
-        run: |
-          set -e
-
-          if [ "${{ matrix.package.type }}" = "cask" ]; then
-            echo "Running: brew livecheck --cask impuls42/tap/${{ matrix.package.name }}"
-            LIVECHECK_OUTPUT=$(brew livecheck --json --cask "impuls42/tap/${{ matrix.package.name }}" 2>&1) || true
-          else
-            echo "Running: brew livecheck --formula impuls42/tap/${{ matrix.package.name }}"
-            LIVECHECK_OUTPUT=$(brew livecheck --json --formula "impuls42/tap/${{ matrix.package.name }}" 2>&1) || true
-          fi
-
-          echo "Livecheck output: $LIVECHECK_OUTPUT"
-
-          # Extract JSON from output (may contain warnings/gem install text)
-          JSON_CONTENT=$(echo "$LIVECHECK_OUTPUT" | sed -n '/^\[/,/^\]/p')
-
-          if [ -z "$JSON_CONTENT" ]; then
-            echo "❌ Livecheck failed: no JSON output returned"
-            exit 1
-          fi
-
-          # Check that livecheck returned valid version data
-          LATEST_VERSION=$(echo "$JSON_CONTENT" | jq -r '.[0].version.latest // empty' 2>/dev/null || echo "")
-
-          if [ -z "$LATEST_VERSION" ]; then
-            echo "❌ Livecheck failed: could not determine latest version"
-            exit 1
-          fi
-
-          echo "Latest version detected: $LATEST_VERSION"
-          echo "✅ Livecheck passed"
-
-      - name: Install build dependencies
-        run: |
-          set -e
-          
-          # Get all build dependencies for the formula
-          BUILD_DEPS=$(brew deps --include-build "impuls42/tap/${{ matrix.package.name }}" 2>/dev/null || echo "")
-          
-          # Install each build dependency
-          if [ -n "$BUILD_DEPS" ]; then
-            echo "Installing build dependencies: $BUILD_DEPS"
-            for dep in $BUILD_DEPS; do
-              echo "  Installing: $dep"
-              brew install "$dep" || echo "⚠️  Warning: Failed to install $dep (may already be installed)"
-            done
-            echo "✅ Build dependencies installed"
-          else
-            echo "ℹ️  No build dependencies detected"
-          fi
-
-      - name: Test installation
-        id: install
-        run: |
-          set -e
-
-          echo "Testing installation of ${{ matrix.package.name }}..."
-
-          if [ "${{ matrix.package.type }}" = "cask" ]; then
-            echo "Running: brew install --cask impuls42/tap/${{ matrix.package.name }}"
-            brew install --cask "impuls42/tap/${{ matrix.package.name }}"
-            echo "✅ Cask installed successfully"
-            echo "installed=true" >> $GITHUB_OUTPUT
-          else
-            echo "Running: brew install impuls42/tap/${{ matrix.package.name }}"
-            
-            # For formulas, attempt installation with verbose output
-            if brew install -v "impuls42/tap/${{ matrix.package.name }}"; then
-              echo "✅ Formula installed successfully"
-              echo "installed=true" >> $GITHUB_OUTPUT
-            else
-              echo "❌ Installation failed"
-              echo ""
-              echo "Debug: Checking Homebrew cache for build output..."
-              find $(brew --cache) -type f -name "*${{ matrix.package.name }}*" 2>/dev/null || true
-              exit 1
-            fi
-          fi
-
-      - name: Test binary/app exists
-        if: steps.install.outputs.installed == 'true'
-        run: |
-          set -e
-
-          if [ "${{ matrix.package.type }}" = "cask" ]; then
-            # For casks, check if app or binary was installed
-            # This is a basic check - might need customization per package
-            echo "Verifying cask installation..."
-            brew list --cask "impuls42/tap/${{ matrix.package.name }}"
-            echo "✅ Cask verified"
-          else
-            # For formulas, check if binary exists
-            echo "Verifying formula installation..."
-            brew list --formula "impuls42/tap/${{ matrix.package.name }}"
-            echo "✅ Formula verified"
-          fi
-
-      - name: Cleanup
-        if: always() && steps.install.outputs.installed == 'true'
-        run: |
-          echo "Cleaning up..."
-          
-          if [ "${{ matrix.package.type }}" = "cask" ]; then
-            brew uninstall --cask "impuls42/tap/${{ matrix.package.name }}" 2>/dev/null || true
-          else
-            brew uninstall --formula "impuls42/tap/${{ matrix.package.name }}" 2>/dev/null || true
-          fi
-          
-          echo "✅ Cleanup complete"
+      - name: Validate package
+        uses: ./.github/actions/validate-package
+        with:
+          name: ${{ matrix.package.name }}
+          type: ${{ matrix.package.type }}
+          run-livecheck: 'true'
 
       - name: Summary
         if: always()
         run: |
           echo "### Test Results for ${{ matrix.package.name }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Type**: ${{ matrix.package.type }}" >> $GITHUB_STEP_SUMMARY
           echo "**Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,8 @@
+name: Setup Homebrew Tap
+description: Tap this repository into Homebrew
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: brew tap impuls42/tap "${{ github.workspace }}"
