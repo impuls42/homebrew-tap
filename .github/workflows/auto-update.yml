@@ -2,13 +2,12 @@ name: Auto-Update
 
 on:
   schedule:
-    # Run daily at 6 AM UTC
     - cron: '0 6 * * *'
-  workflow_dispatch:  # Allow manual triggers
+  workflow_dispatch:
 
 permissions:
-  contents: write        # Required for creating commits
-  pull-requests: write   # Required for creating and merging PRs
+  contents: write
+  pull-requests: write
 
 jobs:
   check-versions:
@@ -18,39 +17,30 @@ jobs:
       outdated_items: ${{ steps.check.outputs.outdated_items }}
       has_updates: ${{ steps.check.outputs.has_updates }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Homebrew
-        id: set-up-homebrew
-        run: |
-          echo "Homebrew already installed on macOS runner"
-          brew --version
-
-      - name: Tap this repository
-        run: |
-          brew tap impuls42/tap "$(pwd)"
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-tap
 
       - name: Check for outdated packages
         id: check
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
-          set -e
-
-          # Run livecheck and capture output
           LIVECHECK_OUTPUT=$(brew livecheck --json --tap impuls42/tap --newer-only 2>&1) || true
-          echo "Livecheck output: $LIVECHECK_OUTPUT"
 
-          # Use the check-outdated.sh script to parse results
-          chmod +x .github/scripts/check-outdated.sh
-          OUTDATED_ITEMS=$(.github/scripts/check-outdated.sh "$LIVECHECK_OUTPUT")
+          # Strip ANSI codes, extract JSON array, filter outdated items
+          OUTDATED_ITEMS=$(echo "$LIVECHECK_OUTPUT" \
+            | sed $'s/\x1b\\[[0-9;]*m//g' \
+            | sed -n '/^\[/,/^\]/p' \
+            | jq -c '[.[] | select(.version.outdated==true)
+                | if .cask then {name:.cask,type:"cask"} else {name:.formula,type:"formula"} end]
+                | unique_by(.name)' 2>/dev/null || echo "[]")
+
+          [ -z "$OUTDATED_ITEMS" ] || [ "$OUTDATED_ITEMS" = "null" ] && OUTDATED_ITEMS="[]"
 
           echo "Outdated items: $OUTDATED_ITEMS"
           echo "outdated_items=$OUTDATED_ITEMS" >> $GITHUB_OUTPUT
 
-          # Check if we have any updates
-          if [ "$OUTDATED_ITEMS" = "[]" ] || [ -z "$OUTDATED_ITEMS" ]; then
+          if [ "$OUTDATED_ITEMS" = "[]" ]; then
             echo "has_updates=false" >> $GITHUB_OUTPUT
           else
             echo "has_updates=true" >> $GITHUB_OUTPUT
@@ -70,74 +60,123 @@ jobs:
     strategy:
       matrix:
         item: ${{ fromJson(needs.check-versions.outputs.outdated_items) }}
-      fail-fast: false  # Continue with other packages if one fails
+      fail-fast: false
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Homebrew
-        run: |
-          echo "Homebrew already installed on macOS runner"
-          brew --version
-
-      - name: Tap this repository
-        run: |
-          brew tap impuls42/tap "$(pwd)"
-
-      - name: Configure Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-tap
 
       - name: Get latest version
-        id: get_version
+        id: version
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
-          set -e
-
-          # Get the latest version from livecheck
-          # Use appropriate flag based on type
-          if [ "${{ matrix.item.type }}" = "formula" ]; then
-            LIVECHECK_JSON=$(brew livecheck --json --formula "impuls42/tap/${{ matrix.item.name }}" --newer-only 2>&1) || true
+          if [ "${{ matrix.item.type }}" = "cask" ]; then
+            TYPE_FLAG="--cask"
           else
-            LIVECHECK_JSON=$(brew livecheck --json --cask "impuls42/tap/${{ matrix.item.name }}" --newer-only 2>&1) || true
+            TYPE_FLAG="--formula"
           fi
-          echo "Livecheck JSON: $LIVECHECK_JSON"
 
-          # Extract the latest version using jq
-          # Handle both JSON starting with [ or mixed output
-          LATEST_VERSION=$(echo "$LIVECHECK_JSON" | sed -n '/^\[/,/^\]/p' | jq -r '.[0].version.latest // empty' 2>/dev/null || echo "")
+          LIVECHECK_JSON=$(brew livecheck --json $TYPE_FLAG "impuls42/tap/${{ matrix.item.name }}" --newer-only 2>&1) || true
+          LATEST=$(echo "$LIVECHECK_JSON" | sed -n '/^\[/,/^\]/p' | jq -r '.[0].version.latest // empty' 2>/dev/null || echo "")
 
-          if [ -z "$LATEST_VERSION" ]; then
-            echo "ERROR: Could not determine latest version for ${{ matrix.item.name }}"
+          if [ -z "$LATEST" ]; then
+            echo "Could not determine latest version for ${{ matrix.item.name }}"
             exit 1
           fi
 
-          echo "Latest version: $LATEST_VERSION"
-          echo "version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "Latest version: $LATEST"
+          echo "version=$LATEST" >> $GITHUB_OUTPUT
 
-      - name: Create update PR
-        id: create_pr
-        env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
-          GH_TOKEN: ${{ github.token }}
+      - name: Get current version
+        id: current
         run: |
-          set -e
+          if [ "${{ matrix.item.type }}" = "formula" ]; then
+            FILE="Formula/${{ matrix.item.name }}.rb"
+          else
+            FILE="Casks/${{ matrix.item.name }}.rb"
+          fi
+          VERSION=$(grep -E '^\s*version\s+"[^"]+"' "$FILE" | sed -E 's/.*version\s+"([^"]+)".*/\1/' || echo "unknown")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-          # Make script executable
-          chmod +x .github/scripts/create-update-pr.sh
+      - name: Bump version
+        uses: ./.github/actions/bump-package
+        with:
+          name: ${{ matrix.item.name }}
+          version: ${{ steps.version.outputs.version }}
+          type: ${{ matrix.item.type }}
 
-          # Run the update script with name, version, and type
-          .github/scripts/create-update-pr.sh "${{ matrix.item.name }}" "${{ steps.get_version.outputs.version }}" "${{ matrix.item.type }}"
+      - name: Create or update PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          NAME="${{ matrix.item.name }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          CURRENT="${{ steps.current.outputs.version }}"
+          TYPE="${{ matrix.item.type }}"
+          TYPE_DISPLAY=$(echo "$TYPE" | sed 's/^./\U&/')
+
+          if [ "$TYPE" = "formula" ]; then
+            FILE="Formula/${NAME}.rb"
+          else
+            FILE="Casks/${NAME}.rb"
+          fi
+
+          # Check for changes
+          if git diff --quiet "$FILE"; then
+            echo "No changes detected in $FILE"
+            exit 0
+          fi
+
+          echo "Changes made:"
+          git diff "$FILE"
+
+          BRANCH="automated-update/${NAME}-${VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH" 2>/dev/null || git checkout "$BRANCH"
+
+          git add "$FILE"
+          git commit -m "Update $NAME to version $VERSION
+
+          Automated update via GitHub Actions.
+
+          - Updated version from $CURRENT to $VERSION
+          - Updated SHA256 checksums
+
+          Co-Authored-By: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+
+          git push -u origin "$BRANCH" --force
+
+          PR_TITLE="Update $NAME to version $VERSION"
+          PR_BODY="## Automated ${TYPE_DISPLAY} Update
+
+          **${TYPE_DISPLAY}**: \`$NAME\`
+          **Previous Version**: \`$CURRENT\`
+          **New Version**: \`$VERSION\`
+
+          ### Changes
+          - Updated version string
+          - Updated SHA256 checksums for all architectures
+          - Verified download URLs
+
+          ---
+          Generated by [GitHub Actions Auto-Update Workflow](https://github.com/${{ github.repository }}/actions)"
+
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --base main --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+          if [ -n "$EXISTING_PR" ]; then
+            gh pr edit "$EXISTING_PR" --title "$PR_TITLE" --body "$PR_BODY"
+            echo "Updated PR #$EXISTING_PR"
+          else
+            gh pr create --title "$PR_TITLE" --body "$PR_BODY" --base main --head "$BRANCH" --label "automatic"
+            echo "Created new PR"
+          fi
 
       - name: Summary
         if: always()
         run: |
           echo "### Update Results for ${{ matrix.item.name }} (${{ matrix.item.type }})" >> $GITHUB_STEP_SUMMARY
-          echo "Target version: ${{ steps.get_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" = "success" ]; then
-            echo "Status: PR created successfully (will be validated and merged by separate workflow)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "Status: Failed to create PR" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "Target version: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY

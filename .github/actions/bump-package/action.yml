@@ -1,0 +1,68 @@
+name: Bump Package Version
+description: Update a cask or formula to a new version using Homebrew tooling
+
+inputs:
+  name:
+    description: Package name
+    required: true
+  version:
+    description: New version to bump to
+    required: true
+  type:
+    description: "Package type: cask or formula"
+    required: true
+
+outputs:
+  changed:
+    description: Whether the package file was modified
+    value: ${{ steps.check.outputs.changed }}
+
+runs:
+  using: composite
+  steps:
+    - name: Bump version
+      shell: bash
+      env:
+        HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
+      run: |
+        if [ "${{ inputs.type }}" = "formula" ]; then
+          brew bump-multi-arch "impuls42/tap/${{ inputs.name }}" \
+            --version="${{ inputs.version }}" --write-only
+        else
+          EXTRA_FLAGS=()
+          if [ "${{ inputs.name }}" = "krokiet" ]; then
+            EXTRA_FLAGS=("--no-audit")
+          fi
+          brew bump-cask-pr "impuls42/tap/${{ inputs.name }}" \
+            --version="${{ inputs.version }}" \
+            --no-browse --write-only \
+            ${EXTRA_FLAGS[@]+"${EXTRA_FLAGS[@]}"}
+        fi
+
+    - name: Sync changes to workspace
+      shell: bash
+      run: |
+        TAP_DIR=$(brew --repository impuls42/tap)
+        if [ "${{ inputs.type }}" = "formula" ]; then
+          SRC="${TAP_DIR}/Formula/${{ inputs.name }}.rb"
+          DST="Formula/${{ inputs.name }}.rb"
+        else
+          SRC="${TAP_DIR}/Casks/${{ inputs.name }}.rb"
+          DST="Casks/${{ inputs.name }}.rb"
+        fi
+        [ -f "$SRC" ] && cp "$SRC" "$DST" || true
+
+    - name: Check for changes
+      id: check
+      shell: bash
+      run: |
+        if [ "${{ inputs.type }}" = "formula" ]; then
+          FILE="Formula/${{ inputs.name }}.rb"
+        else
+          FILE="Casks/${{ inputs.name }}.rb"
+        fi
+        if git diff --quiet "$FILE" 2>/dev/null; then
+          echo "changed=false" >> $GITHUB_OUTPUT
+        else
+          echo "changed=true" >> $GITHUB_OUTPUT
+        fi
