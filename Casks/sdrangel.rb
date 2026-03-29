@@ -17,8 +17,8 @@ cask "sdrangel" do
   homepage "https://www.sdrangel.org/"
 
   livecheck do
-    url "https://api.github.com/repos/f4exb/sdrangel/releases/latest"
-    strategy :json do |json|
+    url "https://github.com/f4exb/sdrangel"
+    strategy :github_latest do |json, _regex|
       next unless json["tag_name"]
       next unless json["assets"]
 
