@@ -19,16 +19,19 @@ cask "sdrangel" do
   livecheck do
     url "https://api.github.com/repos/f4exb/sdrangel/releases/latest"
     strategy :json do |json|
-      next unless json["tag_name"] && json["assets"]
+      next unless json["tag_name"]
+      next unless json["assets"]
 
       app_version = json["tag_name"].delete_prefix("v")
       arm_asset = json["assets"].find { |a| a["name"].match?(/arm64\.dmg$/) }
       intel_asset = json["assets"].find { |a| a["name"].match?(/x86_64\.dmg$/) }
-      next unless arm_asset && intel_asset
+      next unless arm_asset
+      next unless intel_asset
 
       arm_mac = arm_asset["name"][/_mac-(\d+\.\d+\.\d+)_arm64/, 1]
       intel_mac = intel_asset["name"][/_mac-(\d+\.\d+\.\d+)_x86_64/, 1]
-      next unless arm_mac && intel_mac
+      next unless arm_mac
+      next unless intel_mac
 
       "#{app_version},#{arm_mac},#{intel_mac}"
     end
