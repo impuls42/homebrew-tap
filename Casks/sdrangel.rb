@@ -1,14 +1,14 @@
 cask "sdrangel" do
-  version "7.23.2"
-  sha256 arm:   "244f2e12dd079ec96ff16d469b586df942d2d05320ea12d109ada2ba6297174a",
-         intel: "aec92c135f89216df02349ba3411f9be12c0aff2fc54251871652e3515a3db19"
+  version "7.24.0,14.8.4,15.7.5"
+  sha256 arm:   "61e08d28ed7540c20539dbfa5a3dd7ecb7e35309ba9babc659cf58473b34c1af",
+         intel: "31d6bc6cd7375826cdaaccc76317e43749c7f6a6ca1368bf9ce65105775d7c94"
 
   on_arm do
-    url "https://github.com/f4exb/sdrangel/releases/download/v#{version}/sdrangel-#{version}_mac-14.8.3_arm64.dmg",
+    url "https://github.com/f4exb/sdrangel/releases/download/v#{version.csv.first}/sdrangel-#{version.csv.first}_mac-#{version.csv.second}_arm64.dmg",
         verified: "github.com/f4exb/sdrangel/"
   end
   on_intel do
-    url "https://github.com/f4exb/sdrangel/releases/download/v#{version}/sdrangel-#{version}_mac-15.7.3_x86_64.dmg",
+    url "https://github.com/f4exb/sdrangel/releases/download/v#{version.csv.first}/sdrangel-#{version.csv.first}_mac-#{version.csv.third}_x86_64.dmg",
         verified: "github.com/f4exb/sdrangel/"
   end
 
@@ -17,8 +17,24 @@ cask "sdrangel" do
   homepage "https://www.sdrangel.org/"
 
   livecheck do
-    url :url
-    strategy :github_releases
+    url "https://github.com/f4exb/sdrangel"
+    strategy :github_latest do |json, _regex|
+      next unless json["tag_name"]
+      next unless json["assets"]
+
+      app_version = json["tag_name"].delete_prefix("v")
+      arm_asset = json["assets"].find { |a| a["name"].match?(/arm64\.dmg$/) }
+      intel_asset = json["assets"].find { |a| a["name"].match?(/x86_64\.dmg$/) }
+      next unless arm_asset
+      next unless intel_asset
+
+      arm_mac = arm_asset["name"][/_mac-(\d+\.\d+\.\d+)_arm64/, 1]
+      intel_mac = intel_asset["name"][/_mac-(\d+\.\d+\.\d+)_x86_64/, 1]
+      next unless arm_mac
+      next unless intel_mac
+
+      "#{app_version},#{arm_mac},#{intel_mac}"
+    end
   end
 
   depends_on macos: ">= :sonoma"
