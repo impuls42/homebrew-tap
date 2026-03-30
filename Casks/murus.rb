@@ -4,7 +4,6 @@ cask "murus" do
 
   url "https://github.com/TheMurusTeam/Murus/releases/download/v#{version}/murus-#{version}.zip",
       verified: "github.com/TheMurusTeam/Murus/"
-
   name "Murus Firewall"
   desc "Firewall app"
   homepage "https://www.murusfirewall.com/"
@@ -15,7 +14,6 @@ cask "murus" do
     strategy :github_releases do |json, regex|
       json.map do |release|
         next if release["draft"]
-        # intentionally not skipping release["prerelease"]
 
         match = release["tag_name"]&.match(regex)
         next if match.blank?
