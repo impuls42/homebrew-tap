@@ -51,6 +51,7 @@ module Homebrew
         ohai "Bumping #{formula.name} from #{old_version} to #{new_version}"
 
         replacement_pairs = []
+        formula_source = formula.path.read
 
         # Iterate every OS/arch combination, mirroring bump-cask-pr's approach.
         OnSystem::BASE_OS_OPTIONS.product(OnSystem::ARCH_OPTIONS).each do |os, arch|
@@ -88,10 +89,12 @@ module Homebrew
             ohai "#{os}/#{arch}: #{new_sha}"
 
             # Queue replacement pairs.
-            # For formulas with literal URLs the url pair will match;
-            # for #{version}-interpolated URLs it won't match the source
-            # text (harmless — the version-string replacement covers it).
-            replacement_pairs << [old_url, new_url] if old_url != new_url
+            # Only include the URL pair when the old URL appears literally in the
+            # source file.  Formulas that build URLs dynamically (e.g. via a
+            # CHECKSUMS hash + helper method) won't have a literal URL to match,
+            # but their SHA-256 values and version string are always literals and
+            # will be replaced by the pairs queued below.
+            replacement_pairs << [old_url, new_url] if old_url != new_url && formula_source.include?(old_url)
             replacement_pairs << [old_sha, new_sha] if old_sha && old_sha != new_sha
           end
         end
