@@ -20,7 +20,5 @@ cask "codenomad" do
 
   app "CodeNomad.app"
 
-  zap trash: [
-    "~/Library/Application Support/@neuralnomads/codenomad-electron-app"
-  ]
+  zap trash: "~/Library/Application Support/@neuralnomads/codenomad-electron-app"
 end
