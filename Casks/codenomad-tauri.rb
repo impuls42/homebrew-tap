@@ -21,7 +21,7 @@ cask "codenomad-tauri" do
   app "CodeNomad.app"
 
   zap trash: [
-    "~/Library/Application Support/ai.codenomad.CodeNomad-Tauri",
-    "~/Library/Caches/ai.codenomad.CodeNomad-Tauri",
+    "~/Library/WebKit/ai.neuralnomads.codenomad.client",
+    "~/Library/Caches/ai.neuralnomads.codenomad.client"
   ]
 end
