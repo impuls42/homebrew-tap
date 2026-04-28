@@ -15,9 +15,8 @@ cask "codenomad" do
     strategy :github_releases
   end
 
-  depends_on macos: ">= :catalina"
-
   conflicts_with cask: "codenomad-tauri"
+  depends_on macos: ">= :catalina"
 
   app "CodeNomad.app"
 
