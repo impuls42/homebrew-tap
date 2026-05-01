@@ -1,6 +1,6 @@
 cask "murus" do
-  version "3.0-beta-1"
-  sha256 "93e6804c77f22b125fb881fb928bf8fbe23c6203f7f4b192985b303cd3691797"
+  version "3.0-beta-2"
+  sha256 "ca972bbb1f75df6c4426b3cc6e0688cb5af366117cad29fe4becfc272a924690"
 
   url "https://github.com/TheMurusTeam/Murus/releases/download/v#{version}/murus-#{version}.zip",
       verified: "github.com/TheMurusTeam/Murus/"
@@ -24,6 +24,8 @@ cask "murus" do
   end
 
   app "Murus.app"
+
+  depends_on macos: ">= :ventura"
 
   uninstall launchctl: "it.murus.murusfirewallrules"
 

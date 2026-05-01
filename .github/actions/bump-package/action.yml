@@ -30,7 +30,7 @@ runs:
             --version="${{ inputs.version }}" --write-only
         else
           EXTRA_FLAGS=()
-          if [ "${{ inputs.name }}" = "krokiet" ]; then
+          if [ "${{ inputs.name }}" = "krokiet" ] || [ "${{ inputs.name }}" = "murus" ]; then
             EXTRA_FLAGS=("--no-audit")
           fi
           brew bump-cask-pr "impuls42/tap/${{ inputs.name }}" \
