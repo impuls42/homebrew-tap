@@ -36,7 +36,7 @@ runs:
       env:
         HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
       run: |
-        brew bump-cask-min-macos "impuls42/tap/${{ inputs.name }}"
+        brew bump-cask-min-macos "impuls42/tap/${{ inputs.name }}" --version="${{ inputs.version }}"
 
     - name: Bump version
       shell: bash
