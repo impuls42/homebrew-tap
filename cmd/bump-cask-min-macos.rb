@@ -8,7 +8,6 @@ require "cask/download"
 require "fileutils"
 require "hardware"
 require "macho"
-require "pathname"
 require "macos_version"
 require "simulate_system"
 
@@ -67,7 +66,6 @@ module Homebrew
         version_to_symbol = lambda { |v|
           major = v.split(".").first
           case major
-          when "10"    then "catalina"
           when "11"    then "big_sur"
           when "12"    then "monterey"
           when "13"    then "ventura"
@@ -86,7 +84,7 @@ module Homebrew
           return
         end
 
-        detected_min_os, found_binary = detect_min_os(cached_location, modified_cask)
+        detected_min_os = detect_min_os(cached_location, modified_cask)
 
         if detected_min_os.nil?
           puts "Could not determine minimum macOS version from cask download, skipping"
@@ -143,8 +141,11 @@ module Homebrew
             attach_result = system("hdiutil", "attach", "-quiet", "-readonly", "-nobrowse",
                                    "-mountpoint", mount_point, cached_location.to_s)
             if attach_result
-              Dir["#{mount_point}/*.app"].each { |app| FileUtils.cp_r(app, extract_dir) }
-              system("hdiutil", "detach", "-quiet", mount_point)
+              begin
+                Dir["#{mount_point}/*.app"].each { |app| FileUtils.cp_r(app, extract_dir) }
+              ensure
+                system("hdiutil", "detach", "-quiet", mount_point)
+              end
             else
               puts "DMG mount failed, skipping"
             end
@@ -153,12 +154,13 @@ module Homebrew
           end
 
           min_os = nil
-          found_binary = nil
 
           if is_naked
-            min_os, found_binary = inspect_naked_binary(extract_dir)
+            min_os = inspect_naked_binary(extract_dir)
           else
             app_stanzas = cask.artifacts.select { |a| a.is_a?(Cask::Artifact::App) }
+            # NOTE: @source_string is a private ivar of Cask::Artifact::App with no stable public API.
+            # If Homebrew renames/removes it, app_names becomes empty and we fall back to inspecting all .app bundles.
             app_names = app_stanzas.map { |a| a.instance_variable_get(:@source_string) }.compact
 
             Dir.glob("#{extract_dir}/**/*.app").each do |app_bundle|
@@ -166,13 +168,13 @@ module Homebrew
 
               result = inspect_app_bundle(app_bundle)
               if result
-                min_os, found_binary = result
+                min_os = result
                 break
               end
             end
           end
 
-          min_os ? [min_os, found_binary] : nil
+          min_os
         ensure
           FileUtils.rm_rf(work_dir)
         end
@@ -201,7 +203,7 @@ module Homebrew
         ls_min_os = plist[/<key>LSMinimumSystemVersion<\/key>\s*<string>([^<]+)<\/string>/m, 1]
         if ls_min_os.present?
           puts "Found LSMinimumSystemVersion: #{ls_min_os}"
-          return [ls_min_os, "Info.plist LSMinimumSystemVersion"]
+          return ls_min_os
         end
 
         binary_name = plist[/<key>CFBundleExecutable<\/key>\s*<string>([^<]+)<\/string>/m, 1]
@@ -249,7 +251,7 @@ module Homebrew
 
           if min_os
             puts "Found binary: #{binary_path}, min_os: #{min_os}"
-            [min_os, binary_path]
+            min_os
           end
         rescue MachO::NotAMachOError
           puts "Not a Mach-O file: #{binary_path}"
