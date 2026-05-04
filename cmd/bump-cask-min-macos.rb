@@ -65,9 +65,9 @@ module Homebrew
         }
 
         version_to_symbol = lambda { |v|
-          major_minor = v.split(".").first(2).join(".")
-          case major_minor
-          when "10.15" then "catalina"
+          major = v.split(".").first
+          case major
+          when "10"    then "catalina"
           when "11"    then "big_sur"
           when "12"    then "monterey"
           when "13"    then "ventura"
@@ -77,7 +77,6 @@ module Homebrew
           end
         }
 
-        work_dir = Dir.mktmpdir
         begin
           modified_cask = create_modified_cask(cask, new_version)
           download = Cask::Download.new(modified_cask)
@@ -87,7 +86,7 @@ module Homebrew
           return
         end
 
-        detected_min_os, found_binary = detect_min_os(cached_location, cask)
+        detected_min_os, found_binary = detect_min_os(cached_location, modified_cask)
 
         if detected_min_os.nil?
           puts "Could not determine minimum macOS version from cask download, skipping"
@@ -116,8 +115,6 @@ module Homebrew
         else
           puts "No update needed (:#{current_symbol} covers #{min_os_normalized})"
         end
-      ensure
-        FileUtils.rm_rf(work_dir) if work_dir
       end
 
       private
