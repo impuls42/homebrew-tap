@@ -1,6 +1,7 @@
 # typed: strict
 # frozen_string_literal: true
 
+require "open3"
 require "abstract_command"
 require "cask"
 require "cask/download"
@@ -60,6 +61,7 @@ module Homebrew
           "ventura"  => 1300,
           "sonoma"   => 1400,
           "sequoia"  => 1500,
+          "tahoe"    => 1600,
         }
 
         version_to_symbol = lambda { |v|
@@ -71,6 +73,7 @@ module Homebrew
           when "13"    then "ventura"
           when "14"    then "sonoma"
           when "15"    then "sequoia"
+          when "16"    then "tahoe"
           end
         }
 
@@ -84,12 +87,7 @@ module Homebrew
           return
         end
 
-        begin
-          detected_min_os, found_binary = detect_min_os(cached_location, cask)
-        rescue => e
-          puts "Inspection failed: #{e.message}, skipping macOS version check"
-          return
-        end
+        detected_min_os, found_binary = detect_min_os(cached_location, cask)
 
         if detected_min_os.nil?
           puts "Could not determine minimum macOS version from cask download, skipping"
@@ -138,49 +136,52 @@ module Homebrew
         container_type = cask.container&.type
         is_naked = container_type == :naked
 
-        case cached_location.extname
-        when ".zip"
-          system("unzip", "-q", cached_location.to_s, "-d", extract_dir)
-        when ".dmg"
-          mount_point = "#{work_dir}/mnt"
-          FileUtils.mkdir_p(mount_point)
-          system("hdiutil", "attach", "-quiet", "-readonly", "-nobrowse",
-                 "-mountpoint", mount_point, cached_location.to_s)
-          Dir["#{mount_point}/*.app"].each { |app| FileUtils.cp_r(app, extract_dir) }
-          system("hdiutil", "detach", "-quiet", mount_point)
-        else
-          if is_naked
-            FileUtils.cp(cached_location, extract_dir)
+        begin
+          case cached_location.extname
+          when ".zip"
+            system("unzip", "-q", cached_location.to_s, "-d", extract_dir)
+          when ".dmg"
+            mount_point = "#{work_dir}/mnt"
+            FileUtils.mkdir_p(mount_point)
+            attach_result = system("hdiutil", "attach", "-quiet", "-readonly", "-nobrowse",
+                                   "-mountpoint", mount_point, cached_location.to_s)
+            if attach_result
+              Dir["#{mount_point}/*.app"].each { |app| FileUtils.cp_r(app, extract_dir) }
+              system("hdiutil", "detach", "-quiet", mount_point)
+            else
+              puts "DMG mount failed, skipping"
+            end
           else
             FileUtils.cp(cached_location, extract_dir)
           end
-        end
 
-        min_os = nil
-        found_binary = nil
+          min_os = nil
+          found_binary = nil
 
-        if is_naked
-          min_os, found_binary = inspect_naked_binary(extract_dir, cached_location)
-        else
-          app_stanzas = cask.artifacts.select { |a| a.is_a?(Cask::Artifact::App) }
-          app_names = app_stanzas.map { |a| a.instance_variable_get(:@source_string) }.compact
+          if is_naked
+            min_os, found_binary = inspect_naked_binary(extract_dir)
+          else
+            app_stanzas = cask.artifacts.select { |a| a.is_a?(Cask::Artifact::App) }
+            app_names = app_stanzas.map { |a| a.instance_variable_get(:@source_string) }.compact
 
-          Dir.glob("#{extract_dir}/**/*.app").each do |app_bundle|
-            next unless app_stanzas.empty? || app_names.any? { |name| app_bundle.end_with?(name) || app_bundle.include?("/#{name}") }
+            Dir.glob("#{extract_dir}/**/*.app").each do |app_bundle|
+              next unless app_stanzas.empty? || app_names.any? { |name| app_bundle.end_with?(name) || app_bundle.include?("/#{name}") }
 
-            result = inspect_app_bundle(app_bundle)
-            if result
-              min_os, found_binary = result
-              break
+              result = inspect_app_bundle(app_bundle)
+              if result
+                min_os, found_binary = result
+                break
+              end
             end
           end
-        end
 
-        FileUtils.rm_rf(work_dir)
-        min_os ? [min_os, found_binary] : nil
+          min_os ? [min_os, found_binary] : nil
+        ensure
+          FileUtils.rm_rf(work_dir)
+        end
       end
 
-      def inspect_naked_binary(extract_dir, cached_location)
+      def inspect_naked_binary(extract_dir)
         binary_path = Dir.glob("#{extract_dir}/*").find { |f| File.file?(f) }
         return nil unless binary_path
 
@@ -190,53 +191,16 @@ module Homebrew
           return nil
         end
 
-        begin
-          macho = MachO.open(binary_path)
-          min_os = case macho
-          when MachO::MachOFile
-            [
-              macho[:LC_VERSION_MIN_MACOSX].first&.version_string,
-              macho[:LC_BUILD_VERSION].first&.minos_string,
-            ].compact.first
-          when MachO::FatFile
-            arch_min_os = { arm: [], intel: [] }
-            macho.machos.each do |slice|
-              macos_reqs = [
-                slice[:LC_VERSION_MIN_MACOSX].first&.version_string,
-                slice[:LC_BUILD_VERSION].first&.minos_string,
-              ].compact
-
-              case slice.cputype
-              when *Hardware::CPU::ARM_ARCHS
-                arch_min_os[:arm].concat(macos_reqs)
-              when *Hardware::CPU::INTEL_ARCHS
-                arch_min_os[:intel].concat(macos_reqs)
-              end
-            end
-            candidate = arch_min_os.fetch(SimulateSystem.current_arch, [])
-            candidate.max
-          end
-
-          if min_os
-            puts "Found binary: #{binary_path}, min_os: #{min_os}"
-            [min_os, binary_path]
-          else
-            nil
-          end
-        rescue MachO::NotAMachOError
-          puts "Not a Mach-O file: #{binary_path}"
-          nil
-        rescue => e
-          puts "Error reading #{binary_path}: #{e.message}"
-          nil
-        end
+        macho_min_os(binary_path)
       end
 
       def inspect_app_bundle(app_bundle)
         plist_path = "#{app_bundle}/Contents/Info.plist"
         return nil unless File.exist?(plist_path)
 
-        plist = `plutil -convert xml1 -o - #{plist_path}`.strip
+        plist, status = Open3.capture2("plutil", "-convert", "xml1", "-o", "-", plist_path)
+        return nil unless status.success?
+
         ls_min_os = plist[/<key>LSMinimumSystemVersion<\/key>\s*<string>([^<]+)<\/string>/m, 1]
         if ls_min_os.present?
           puts "Found LSMinimumSystemVersion: #{ls_min_os}"
@@ -255,6 +219,10 @@ module Homebrew
           return nil
         end
 
+        macho_min_os(binary_path)
+      end
+
+      def macho_min_os(binary_path)
         begin
           macho = MachO.open(binary_path)
           min_os = case macho
