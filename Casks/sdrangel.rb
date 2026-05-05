@@ -1,7 +1,7 @@
 cask "sdrangel" do
-  version "7.24.0,14.8.4,15.7.5"
-  sha256 arm:   "61e08d28ed7540c20539dbfa5a3dd7ecb7e35309ba9babc659cf58473b34c1af",
-         intel: "31d6bc6cd7375826cdaaccc76317e43749c7f6a6ca1368bf9ce65105775d7c94"
+  version "7.25.0,14.8.5,15.7.5"
+  sha256 arm:   "47f94d3a1e97eb8437460891850959a591e2f50298bfea6835e4dbf30f52eb1c",
+         intel: "57252af26bbfee6fec21a47f4f89a59dc820922dd7a468a750ed90655be63320"
 
   on_arm do
     url "https://github.com/f4exb/sdrangel/releases/download/v#{version.csv.first}/sdrangel-#{version.csv.first}_mac-#{version.csv.second}_arm64.dmg",
