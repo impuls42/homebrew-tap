@@ -13,11 +13,15 @@ cask "xpra" do
   livecheck do
     url "https://xpra.org/dists/MacOS/arm64/"
     regex(/Xpra-arm64[_-]v?(\d+(?:\.\d+)+)-r(\d+)\.dmg["' >]/i)
-    strategy :page_match
+    strategy :page_match do |page, regex|
+      page.scan(regex).map do |match|
+        v, r = match
+        "#{v},#{r}"
+      end
+    end
   end
 
   conflicts_with cask: "xpra-beta"
-
   depends_on macos: ">= :monterey"
 
   app "Xpra.app"
