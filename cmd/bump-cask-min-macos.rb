@@ -13,7 +13,7 @@ require "simulate_system"
 
 module Homebrew
   module Cmd
-    class BumpCaskMinMacos < AbstractCommand
+    class BumpCaskMinMacosCmd < AbstractCommand
 
       cmd_args do
         description <<~EOS
