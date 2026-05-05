@@ -16,10 +16,28 @@ outputs:
   changed:
     description: Whether the package file was modified
     value: ${{ steps.check.outputs.changed }}
+  macos_updated:
+    description: Whether the macOS minimum version requirement was updated
+    value: ${{ steps.macos_check.outputs.macos_updated || 'false' }}
+  old_macos_version:
+    description: The previous macOS minimum version symbol (if updated)
+    value: ${{ steps.macos_check.outputs.old_macos_version }}
+  new_macos_version:
+    description: The new macOS minimum version symbol (if updated)
+    value: ${{ steps.macos_check.outputs.new_macos_version }}
 
 runs:
   using: composite
   steps:
+    - name: Detect and update macOS minimum version requirement
+      id: macos_check
+      if: inputs.type == 'cask'
+      shell: bash
+      env:
+        HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
+      run: |
+        brew bump-cask-min-macos "impuls42/tap/${{ inputs.name }}" --version="${{ inputs.version }}"
+
     - name: Bump version
       shell: bash
       env:
