@@ -41,9 +41,11 @@ cask "xpra-beta" do
     File.chmod 0755, shimscript
 
     system_command "/usr/bin/codesign",
-                   args: ["--force", "--deep", "--sign", "-", "#{appdir}/Xpra.app"]
+                   args:         ["--force", "--deep", "--sign", "-", "#{appdir}/Xpra.app"],
+                   must_succeed: false
     system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/Xpra.app"]
+                   args:         ["-dr", "com.apple.quarantine", "#{appdir}/Xpra.app"],
+                   must_succeed: false
   end
 
   uninstall delete: "#{HOMEBREW_PREFIX}/bin/xpra"
