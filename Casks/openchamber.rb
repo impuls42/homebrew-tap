@@ -20,7 +20,8 @@ cask "openchamber" do
   app "OpenChamber.app"
 
   zap trash: [
-    "~/Library/Application Support/OpenChamber",
-    "~/Library/Logs/OpenChamber",
+    "~/.config/openchamber",
+    "~/Library/Caches/ai.opencode.openchamber/",
+    "~/Library/WebKit/ai.opencode.openchamber/",
   ]
 end
