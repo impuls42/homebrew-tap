@@ -1,7 +1,7 @@
 class Spotctl < Formula
   desc "CLI tool for managing Rackspace Spot resources"
   homepage "https://github.com/rackspace-spot/spotctl"
-  version "0.1.1"
+  version "0.2.0"
   license "Apache-2.0"
 
   livecheck do
@@ -13,10 +13,10 @@ class Spotctl < Formula
   # Key format: "<os>-<arch>" — mirrors the upstream binary naming convention.
   RELEASE_BASE = "https://github.com/rackspace-spot/spotctl/releases/download".freeze
   CHECKSUMS = {
-    "darwin-amd64" => "82ae1b7cf2c4b1b9fa41ea7b870ce26a6dd3b0519cf603c34953c61452b8152c",
-    "darwin-arm64" => "cf19c982cf7a831a0c1884abccbcbc88655c8b3bea7fe277d4ec697cf19606d3",
-    "linux-amd64"  => "c099e6fa3b2a1b885a1a52b249efb4be842480a4bc5f1353c94779bb2886472a",
-    "linux-arm64"  => "c372f9c272ae0eb9d0ae87c7afc80df12073c464335e8e22e500a2bd11dc67ac",
+    "darwin-amd64" => "b1320ee9fdab622051e3b1dfc858097492f08f1cd5c08f5f34734872515980d8",
+    "darwin-arm64" => "9f5eb1077b2918b8cb6d0a7bb3f0ec0390584d7d88d379fa52efcc70280e6505",
+    "linux-amd64"  => "2add5c920524bdb9ac3f78eca9d6c66382ee1b70d43934e7387b1fe51853f278",
+    "linux-arm64"  => "dff5021d00d45a379dc4144129139b6d6073e10d4bb23e90ac675eeb1f06d25b",
   }.freeze
 
   # Registers the correct url + sha256 for a given platform key.
