@@ -1,11 +1,11 @@
 cask "codenomad" do
   arch arm: "arm64", intel: "x64"
 
-  version "0.15.0"
-  sha256 arm:   "68fcecbae9f753eb39f7a83c7f8dce8e3b7ac964004b35910b6ed41ea420bc10",
-         intel: "c02ac6fbceae140cc51bdaaaf684277cb9844524cb8f5a3332bdb65e19257559"
+  version "0.16.0"
+  sha256 arm:   "a5ed5214e0eae569b4f9d0daa5d904afdf0486c8b5014e705a0a05eb5d5f4955",
+         intel: "d396b3ddc94697929712b92c62f28c17976f84694b927eaaa412080b2ee4bb56"
 
-  url "https://github.com/NeuralNomadsAI/CodeNomad/releases/download/v#{version}/CodeNomad-#{version}-mac-#{arch}.zip"
+  url "https://github.com/NeuralNomadsAI/CodeNomad/releases/download/v#{version}/CodeNomad-Electron-macos-#{arch}-#{version}.zip"
   name "CodeNomad"
   desc "AI-powered coding assistant with remote development and sidecar support"
   homepage "https://github.com/NeuralNomadsAI/CodeNomad"
