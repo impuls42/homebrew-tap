@@ -1,14 +1,14 @@
 cask "openchamber" do
-  arch arm: "aarch64", intel: "x86_64"
+  arch arm: "arm64", intel: "x64"
 
-  version "1.11.3"
-  sha256 arm:   "a7a05af11c14d9e61fe74d922acf3af4bb6d559d4cf2f17ac880e95b539869d2",
-         intel: "758bc02f92209b684956e7038d10886f322207e44916018199da199f61d5c1e7"
+  version "1.11.7"
+  sha256 arm:   "8f6d0e5a77c4adc654758681a4da7a5b0244abbc8b6821851b40066bafb7e7a2",
+         intel: "48ab8587ea5e80226c7a34e1cb3fa72fd5d0b18a1065e82c7b734cc11591ecd8"
 
-  url "https://github.com/btriapitsyn/openchamber/releases/download/v#{version}/OpenChamber_#{version}_darwin-#{arch}.dmg"
+  url "https://github.com/openchamber/openchamber/releases/download/v#{version}/OpenChamber-#{version}-mac-#{arch}.dmg"
   name "OpenChamber"
   desc "Desktop and web interface for OpenCode AI agent"
-  homepage "https://github.com/btriapitsyn/openchamber"
+  homepage "https://github.com/openchamber/openchamber"
 
   livecheck do
     url :url
