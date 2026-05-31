@@ -83,11 +83,14 @@ jobs:
             FORMULA_FILES=$(echo "$CHANGED_FILES" | grep -E '^Formula/.*\.rb$' || echo "")
 
             for file in $CASK_FILES; do
+              # Skip files removed in this change (e.g. a cask converted to a formula)
+              [ -f "$file" ] || continue
               name=$(basename "$file" .rb)
               PACKAGES=$(echo "$PACKAGES" | jq -c '. + [{name: "'$name'", type: "cask"}]')
             done
 
             for file in $FORMULA_FILES; do
+              [ -f "$file" ] || continue
               name=$(basename "$file" .rb)
               PACKAGES=$(echo "$PACKAGES" | jq -c '. + [{name: "'$name'", type: "formula"}]')
             done

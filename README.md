@@ -26,7 +26,6 @@ Then install any package listed below.
 | **firefox-webserial** | Native messaging host for WebSerial API polyfill for Firefox | `brew install --cask firefox-webserial` |
 | **murus** | Firewall app for macOS | `brew install --cask murus` |
 | **xpra** | Screen and application forwarding system (arm64 only) | `brew install --cask xpra` |
-| **mux** | Desktop app for isolated, parallel agentic development (Linux AppImage) | `brew install --cask mux` |
 
 ### Formulae (CLI tools)
 
@@ -34,6 +33,7 @@ Then install any package listed below.
 |---------|-------------|---------|
 | **dagger** | Integrated platform to orchestrate the delivery of applications | `brew install impuls42/tap/dagger` |
 | **spotctl** | CLI tool for managing Rackspace Spot resources | `brew install impuls42/tap/spotctl` |
+| **mux** | Desktop app for isolated, parallel agentic development — installs the upstream AppImage (Linux x86_64/arm64 only) | `brew install impuls42/tap/mux` |
 
 ---
 
