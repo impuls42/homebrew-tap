@@ -1,7 +1,7 @@
 class Mux < Formula
   desc "Desktop app for isolated, parallel agentic development"
   homepage "https://github.com/coder/mux"
-  version "0.26.0"
+  version "0.26.1"
   license "AGPL-3.0-only"
 
   livecheck do
@@ -15,8 +15,8 @@ class Mux < Formula
   # Key format mirrors the upstream AppImage arch naming.
   RELEASE_BASE = "https://github.com/coder/mux/releases/download".freeze
   CHECKSUMS = {
-    "x86_64" => "d268ed5799580af90431a20e2ba504c5daf5d8ddbc4919535ea37046d6eb95a5",
-    "arm64"  => "4af3bc36d1fc6bd36d2825e3870d013576e5e58ed27e305bd27d53f452ecc048",
+    "x86_64" => "6cd34415b1b2e02ec40be410ee657ca7a0b479d406992a7bf862a784a1759b32",
+    "arm64"  => "04ff6fdcb0791969b92ec02e84b8b372fd84ef1711ebce0be0e96d326664168b",
   }.freeze
 
   # Registers the correct url + sha256 for a given AppImage arch.
