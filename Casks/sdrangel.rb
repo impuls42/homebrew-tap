@@ -17,27 +17,38 @@ cask "sdrangel" do
   homepage "https://www.sdrangel.org/"
 
   livecheck do
-    url "https://github.com/f4exb/sdrangel"
-    strategy :github_latest do |json, _regex|
-      next unless json["tag_name"]
-      next unless json["assets"]
+    url "https://github.com/f4exb/sdrangel/releases"
+    strategy :github_releases do |json, _regex|
+      # The macOS DMGs embed their own app version and macOS build number, e.g.
+      # "sdrangel-7.25.1_mac-14.8.5_arm64.dmg". Upstream sometimes tags a new
+      # release while reusing the previous mac DMGs (so the embedded app version
+      # lags the tag) or ships a release with no mac DMGs at all. The cask URL
+      # derives the release tag from the app version, so scan releases and only
+      # accept ones where a mac DMG matching the tag has actually shipped
+      # (embedded app version == tag), otherwise the constructed URL would 404.
+      json.filter_map do |release|
+        next if release["draft"] || release["prerelease"]
+        next unless release["tag_name"]
+        next unless release["assets"]
 
-      app_version = json["tag_name"].delete_prefix("v")
-      arm_asset = json["assets"].find { |a| a["name"].match?(/arm64\.dmg$/) }
-      intel_asset = json["assets"].find { |a| a["name"].match?(/x86_64\.dmg$/) }
-      next unless arm_asset
-      next unless intel_asset
+        tag_version = release["tag_name"].delete_prefix("v")
+        arm_asset = release["assets"].find { |a| a["name"].match?(/_mac-.*arm64\.dmg$/) }
+        intel_asset = release["assets"].find { |a| a["name"].match?(/_mac-.*x86_64\.dmg$/) }
+        next unless arm_asset
+        next unless intel_asset
 
-      arm_mac = arm_asset["name"][/_mac-(\d+\.\d+\.\d+)_arm64/, 1]
-      intel_mac = intel_asset["name"][/_mac-(\d+\.\d+\.\d+)_x86_64/, 1]
-      next unless arm_mac
-      next unless intel_mac
+        arm_match = arm_asset["name"].match(/sdrangel-(\d+\.\d+\.\d+)_mac-(\d+\.\d+\.\d+)_arm64/)
+        intel_match = intel_asset["name"].match(/sdrangel-(\d+\.\d+\.\d+)_mac-(\d+\.\d+\.\d+)_x86_64/)
+        next unless arm_match
+        next unless intel_match
+        next if arm_match[1] != tag_version
 
-      "#{app_version},#{arm_mac},#{intel_mac}"
+        "#{arm_match[1]},#{arm_match[2]},#{intel_match[2]}"
+      end
     end
   end
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "SDRangel.app"
 
