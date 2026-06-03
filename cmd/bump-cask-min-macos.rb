@@ -46,7 +46,12 @@ module Homebrew
           return
         end
 
-        current_symbol = cask_file.read[/">= :([a-z_]+)"/, 1]
+        # Accept both the bare symbol form (`depends_on macos: :sonoma`, which
+        # `brew style` prefers) and the legacy comparison string form
+        # (`depends_on macos: ">= :sonoma"`).
+        cask_content = cask_file.read
+        current_symbol = cask_content[/depends_on macos:\s*">= :([a-z_]+)"/, 1] ||
+                         cask_content[/depends_on macos:\s*:([a-z_]+)/, 1]
         if current_symbol.nil? || current_symbol.empty?
           puts "Could not parse current macos symbol, skipping"
           return
@@ -107,7 +112,9 @@ module Homebrew
         if new_rank > cur_rank
           puts "Bumping depends_on macos: from :#{current_symbol} to :#{new_symbol}"
           content = cask_file.read
-          updated = content.sub(/depends_on macos: ">= :[a-z_]+"/, "depends_on macos: \">= :#{new_symbol}\"")
+          # Write the bare symbol form to stay `brew style` compliant, replacing
+          # whichever form the cask currently uses.
+          updated = content.sub(/depends_on macos:\s*(?:">= :[a-z_]+"|:[a-z_]+)/, "depends_on macos: :#{new_symbol}")
           cask_file.write(updated)
           output_github_output(true, current_symbol, new_symbol)
         else

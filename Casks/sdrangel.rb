@@ -34,16 +34,17 @@ cask "sdrangel" do
       # lags the tag). The cask URL derives the release tag from the app version,
       # so only report an update when the mac build for this tag has actually
       # shipped (embedded app version == tag), otherwise the URL would 404.
-      arm_app, arm_mac = arm_asset["name"].match(/sdrangel-(\d+\.\d+\.\d+)_mac-(\d+\.\d+\.\d+)_arm64/)&.captures
-      intel_app, intel_mac = intel_asset["name"].match(/sdrangel-(\d+\.\d+\.\d+)_mac-(\d+\.\d+\.\d+)_x86_64/)&.captures
-      next unless arm_app && intel_app
-      next unless arm_app == tag_version
+      arm_match = arm_asset["name"].match(/sdrangel-(\d+\.\d+\.\d+)_mac-(\d+\.\d+\.\d+)_arm64/)
+      intel_match = intel_asset["name"].match(/sdrangel-(\d+\.\d+\.\d+)_mac-(\d+\.\d+\.\d+)_x86_64/)
+      next unless arm_match
+      next unless intel_match
+      next if arm_match[1] != tag_version
 
-      "#{arm_app},#{arm_mac},#{intel_mac}"
+      "#{arm_match[1]},#{arm_match[2]},#{intel_match[2]}"
     end
   end
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "SDRangel.app"
 

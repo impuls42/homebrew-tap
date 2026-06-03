@@ -15,7 +15,7 @@ cask "openchamber" do
     strategy :github_releases
   end
 
-  depends_on macos: ">= :monterey"
+  depends_on macos: :monterey
 
   app "OpenChamber.app"
 
