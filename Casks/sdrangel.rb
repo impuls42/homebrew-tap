@@ -22,18 +22,24 @@ cask "sdrangel" do
       next unless json["tag_name"]
       next unless json["assets"]
 
-      app_version = json["tag_name"].delete_prefix("v")
-      arm_asset = json["assets"].find { |a| a["name"].match?(/arm64\.dmg$/) }
-      intel_asset = json["assets"].find { |a| a["name"].match?(/x86_64\.dmg$/) }
+      tag_version = json["tag_name"].delete_prefix("v")
+      arm_asset = json["assets"].find { |a| a["name"].match?(/_mac-.*arm64\.dmg$/) }
+      intel_asset = json["assets"].find { |a| a["name"].match?(/_mac-.*x86_64\.dmg$/) }
       next unless arm_asset
       next unless intel_asset
 
-      arm_mac = arm_asset["name"][/_mac-(\d+\.\d+\.\d+)_arm64/, 1]
-      intel_mac = intel_asset["name"][/_mac-(\d+\.\d+\.\d+)_x86_64/, 1]
-      next unless arm_mac
-      next unless intel_mac
+      # The macOS DMGs embed their own app version and macOS build number, e.g.
+      # "sdrangel-7.25.1_mac-14.8.5_arm64.dmg". Upstream sometimes tags a new
+      # release while reusing the previous mac DMGs (so the embedded app version
+      # lags the tag). The cask URL derives the release tag from the app version,
+      # so only report an update when the mac build for this tag has actually
+      # shipped (embedded app version == tag), otherwise the URL would 404.
+      arm_app, arm_mac = arm_asset["name"].match(/sdrangel-(\d+\.\d+\.\d+)_mac-(\d+\.\d+\.\d+)_arm64/)&.captures
+      intel_app, intel_mac = intel_asset["name"].match(/sdrangel-(\d+\.\d+\.\d+)_mac-(\d+\.\d+\.\d+)_x86_64/)&.captures
+      next unless arm_app && intel_app
+      next unless arm_app == tag_version
 
-      "#{app_version},#{arm_mac},#{intel_mac}"
+      "#{arm_app},#{arm_mac},#{intel_mac}"
     end
   end
 

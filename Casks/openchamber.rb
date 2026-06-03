@@ -1,9 +1,9 @@
 cask "openchamber" do
   arch arm: "arm64", intel: "x64"
 
-  version "1.11.7"
-  sha256 arm:   "8f6d0e5a77c4adc654758681a4da7a5b0244abbc8b6821851b40066bafb7e7a2",
-         intel: "48ab8587ea5e80226c7a34e1cb3fa72fd5d0b18a1065e82c7b734cc11591ecd8"
+  version "1.12.0"
+  sha256 arm:   "b3ef718ac63ae40ab1e310116d1a1ad75dec1f4dfa8f4f6c55be142269cc02bb",
+         intel: "2f7aa55711dc8014d457ff1a7dc2b90cb2bc10123c5d93d9912133ea83e8a580"
 
   url "https://github.com/openchamber/openchamber/releases/download/v#{version}/OpenChamber-#{version}-mac-#{arch}.dmg"
   name "OpenChamber"
@@ -15,7 +15,7 @@ cask "openchamber" do
     strategy :github_releases
   end
 
-  depends_on macos: :ventura
+  depends_on macos: ">= :monterey"
 
   app "OpenChamber.app"
 
