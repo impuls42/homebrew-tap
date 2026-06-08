@@ -23,9 +23,9 @@ cask "murus" do
     end
   end
 
-  app "Murus.app"
-
   depends_on macos: :ventura
+
+  app "Murus.app"
 
   uninstall launchctl: "it.murus.murusfirewallrules"
 
