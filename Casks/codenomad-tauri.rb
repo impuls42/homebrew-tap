@@ -16,7 +16,7 @@ cask "codenomad-tauri" do
   end
 
   conflicts_with cask: "codenomad"
-  depends_on macos: ">= :catalina"
+  depends_on macos: :catalina
 
   app "CodeNomad.app"
 

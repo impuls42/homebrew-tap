@@ -25,7 +25,7 @@ cask "murus" do
 
   app "Murus.app"
 
-  depends_on macos: ">= :ventura"
+  depends_on macos: :ventura
 
   uninstall launchctl: "it.murus.murusfirewallrules"
 
