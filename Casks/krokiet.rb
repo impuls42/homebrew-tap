@@ -12,7 +12,7 @@ cask "krokiet" do
     strategy :github_releases
   end
 
-  depends_on macos: ">= :catalina"
+  depends_on macos: :catalina
   depends_on arch: :arm64
   container type: :naked
 
