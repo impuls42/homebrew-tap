@@ -1,7 +1,7 @@
 class Dagger < Formula
   desc "Integrated platform to orchestrate the delivery of applications"
   homepage "https://dagger.io"
-  version "0.21.4"
+  version "0.21.5"
   license "Apache-2.0"
 
   livecheck do
@@ -13,10 +13,10 @@ class Dagger < Formula
   # Key format: "<os>_<arch>" — mirrors the upstream tarball naming convention.
   RELEASE_BASE = "https://github.com/dagger/dagger/releases/download".freeze
   CHECKSUMS = {
-    "darwin_amd64" => "4219176bd0bc8e10aca717e91d826c1e64bbff9184d772846b5ea627558ff6e2",
-    "darwin_arm64" => "91bda59ac41a230c2d95e4cde08a24c6842a00347e49769068892254f584bb25",
-    "linux_amd64"  => "4db2f807b67e3160fb110bb1e088b14c516594b8d287114a39c980f2485e9672",
-    "linux_arm64"  => "d4610ec53c77eef7a5610b732b9e9b0d26c3f1c5911ef99e5e8e5c9e7cf6880e",
+    "darwin_amd64" => "ad71f284fc70d164f49ab4def4f458f24b1d5dfc1e3981fa5b08fee73a77bed4",
+    "darwin_arm64" => "61f52448927cfbd5715f0385f47e1f500ccef54d80c72ffdf9404884c2e650b3",
+    "linux_amd64"  => "66d5120cab472d3eb99971079d6872d43f11d4244ab08e32a80d7e31ea0f3b42",
+    "linux_arm64"  => "0f7ea24a9b783be0fc54d512c9921454640b0b0b0355ffe382e3245c2145e5e3",
   }.freeze
 
   # Registers the correct url + sha256 for a given platform key.
