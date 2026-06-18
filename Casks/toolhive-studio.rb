@@ -13,7 +13,12 @@ cask "toolhive-studio" do
 
   livecheck do
     url :url
-    strategy :github_releases
+    strategy :github_releases do |json|
+      json.map { |r|
+        next if r["prerelease"] || r["draft"]
+        r["tag_name"].delete_prefix("v") if r["assets"]&.any? { |a| a["name"] == "ToolHive-arm64.dmg" }
+      }.compact.first
+    end
   end
 
   depends_on macos: :monterey
