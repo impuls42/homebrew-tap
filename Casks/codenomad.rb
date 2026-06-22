@@ -1,9 +1,9 @@
 cask "codenomad" do
   arch arm: "arm64", intel: "x64"
 
-  version "0.17.0"
-  sha256 arm:   "7fb990cd44f7154ecace9fffc2a06e0355aabe79d25ead1776a5fea959dd6669",
-         intel: "d0bf3ab72451b560b3ec8b494eb406f955f0eacfdf72be20466a424492d17326"
+  version "0.18.0"
+  sha256 arm:   "332eaac0bac326f05e04617bc1a71167b71c9442859062668206353a83a435f0",
+         intel: "9ab7b5c05b55b28c6ea832aeff10de107b9e96d5d06f97f45ca1cc46be1e8c47"
 
   url "https://github.com/NeuralNomadsAI/CodeNomad/releases/download/v#{version}/CodeNomad-Electron-macos-#{arch}-#{version}.zip"
   name "CodeNomad"
