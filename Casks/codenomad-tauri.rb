@@ -1,9 +1,9 @@
 cask "codenomad-tauri" do
   arch arm: "arm64", intel: "x64"
 
-  version "0.17.0"
-  sha256 arm:   "052e51e078b2ce6642bc9000d96e1901e3795b2eb0438a7d171cd2d5198cf122",
-         intel: "ed9457d4e6f20b0af60216ee0e1d281770314c528c37ba5270b7dd13e0d6c3cb"
+  version "0.18.0"
+  sha256 arm:   "e44cc8fa7bf5a8fffff7a6e346219e87490740dd7a80d4e635ca9ef0fb07106e",
+         intel: "5bec27c472359f7f5f4f1d1a6f4ad206b723bfd9d4cb04c452fd9ec234099dcf"
 
   url "https://github.com/NeuralNomadsAI/CodeNomad/releases/download/v#{version}/CodeNomad-Tauri-macos-#{arch}-#{version}.zip"
   name "CodeNomad Tauri"
