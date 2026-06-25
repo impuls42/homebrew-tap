@@ -48,9 +48,14 @@ runs:
             --version="${{ inputs.version }}" --write-only
         else
           EXTRA_FLAGS=()
-          if [ "${{ inputs.name }}" = "krokiet" ] || [ "${{ inputs.name }}" = "murus" ]; then
-            EXTRA_FLAGS=("--no-audit")
-          fi
+          # Some casks crash Homebrew's strict (online) audit with an internal
+          # error (e.g. "undefined method '>' for nil"). Skip the audit for them;
+          # the plain `brew audit` in the test-packages workflow still covers them.
+          case "${{ inputs.name }}" in
+            krokiet|murus|mcp-router)
+              EXTRA_FLAGS=("--no-audit")
+              ;;
+          esac
           brew bump-cask-pr "impuls42/tap/${{ inputs.name }}" \
             --version="${{ inputs.version }}" \
             --no-browse --write-only \
