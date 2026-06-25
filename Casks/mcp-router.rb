@@ -12,6 +12,8 @@ cask "mcp-router" do
     strategy :github_releases
   end
 
+  depends_on macos: :big_sur
+
   app "MCP Router.app"
 
   zap trash: [
