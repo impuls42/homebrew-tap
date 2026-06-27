@@ -9,6 +9,9 @@ class Spotctl < Formula
     strategy :github_latest
   end
 
+  # The impuls42 fork installs the same `spotctl` binary.
+  conflicts_with "spotctl-mcp", because: "both install a `spotctl` binary"
+
   # Single source of truth for all release artifacts.
   # Key format: "<os>-<arch>" — mirrors the upstream binary naming convention.
   RELEASE_BASE = "https://github.com/rackspace-spot/spotctl/releases/download".freeze

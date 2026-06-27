@@ -4,13 +4,13 @@ class SpotctlMcp < Formula
   version "0.3.0"
   license "Apache-2.0"
 
-  # Installs the same `spotctl` binary as the upstream formula.
-  conflicts_with "spotctl", because: "both install a `spotctl` binary"
-
   livecheck do
     url :stable
     strategy :github_latest
   end
+
+  # Installs the same `spotctl` binary as the upstream formula.
+  conflicts_with "spotctl", because: "both install a `spotctl` binary"
 
   # Single source of truth for all release artifacts.
   # Key format: "<os>_<arch>" — mirrors the release tarball naming convention.
