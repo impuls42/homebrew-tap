@@ -26,6 +26,11 @@ permissions:
   contents: write
   pull-requests: write
 
+# Trust our own tap so brew can load/audit/install formulae that reference
+# other formulae in this tap (e.g. conflicts_with between spotctl & spotctl-mcp).
+env:
+  HOMEBREW_NO_REQUIRE_TAP_TRUST: 1
+
 jobs:
   find-prs:
     name: Find PRs to Process

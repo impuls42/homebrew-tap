@@ -6,9 +6,3 @@ runs:
   steps:
     - shell: bash
       run: brew tap impuls42/tap "${{ github.workspace }}"
-
-    # Newer Homebrew refuses to load formulae from a locally-tapped repo
-    # (e.g. when resolving conflicts_with / deps between formulae in this tap)
-    # unless the tap is explicitly trusted. Trust our own tap.
-    - shell: bash
-      run: brew trust impuls42/tap || true
