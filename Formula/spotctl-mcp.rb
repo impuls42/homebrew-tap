@@ -9,9 +9,6 @@ class SpotctlMcp < Formula
     strategy :github_latest
   end
 
-  # Installs the same `spotctl` binary as the upstream formula.
-  conflicts_with "spotctl", because: "both install a `spotctl` binary"
-
   # Single source of truth for all release artifacts.
   # Key format: "<os>_<arch>" — mirrors the release tarball naming convention.
   RELEASE_BASE = "https://github.com/impuls42/spotctl/releases/download".freeze
@@ -37,6 +34,9 @@ class SpotctlMcp < Formula
     on_intel { artifact "linux_amd64" }
     on_arm   { artifact "linux_arm64" }
   end
+
+  # Installs the same `spotctl` binary as the upstream formula.
+  conflicts_with "spotctl", because: "both install a `spotctl` binary"
 
   def install
     bin.install "spotctl"

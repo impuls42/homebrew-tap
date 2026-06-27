@@ -9,9 +9,6 @@ class Spotctl < Formula
     strategy :github_latest
   end
 
-  # The impuls42 fork installs the same `spotctl` binary.
-  conflicts_with "spotctl-mcp", because: "both install a `spotctl` binary"
-
   # Single source of truth for all release artifacts.
   # Key format: "<os>-<arch>" — mirrors the upstream binary naming convention.
   RELEASE_BASE = "https://github.com/rackspace-spot/spotctl/releases/download".freeze
@@ -37,6 +34,9 @@ class Spotctl < Formula
     on_intel { artifact "linux-amd64" }
     on_arm   { artifact "linux-arm64" }
   end
+
+  # The impuls42 fork installs the same `spotctl` binary.
+  conflicts_with "spotctl-mcp", because: "both install a `spotctl` binary"
 
   def install
     os   = OS.mac? ? "darwin" : "linux"
