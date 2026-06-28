@@ -1,6 +1,6 @@
 cask "mcp-router" do
-  version "0.6.2"
-  sha256 "125dcbba4dde6cc573f5e30e2d9cb35f91eee00ea6bba565ce9518b4639580a7"
+  version "0.6.3"
+  sha256 "2282c9b9ada119eb9fb396d4835a6c78ce465e6b407f3c87b1de25eafd447087"
 
   url "https://github.com/mcp-router/mcp-router/releases/download/v#{version}/MCP-Router.dmg"
   name "MCP Router"
@@ -12,7 +12,7 @@ cask "mcp-router" do
     strategy :github_releases
   end
 
-  depends_on macos: :big_sur
+  depends_on macos: :monterey
 
   app "MCP Router.app"
 
