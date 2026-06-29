@@ -1,6 +1,6 @@
 cask "krokiet" do
-  version "11.0.1"
-  sha256 "04bc51fa769e8373ef6c2425c08cd7016b2cc826ec29e25d3a403bc8a56e8a70"
+  version "12.0.0"
+  sha256 "09adbb733bdfb7444c4d1c3cb6ea5c1663f3ac63def9f639e74bf4eccb87fbaa"
 
   url "https://github.com/qarmin/czkawka/releases/download/#{version}/mac_krokiet_arm64"
   name "krokiet"
@@ -12,7 +12,7 @@ cask "krokiet" do
     strategy :github_releases
   end
 
-  depends_on macos: :catalina
+  depends_on macos: :big_sur
   depends_on arch: :arm64
   container type: :naked
 
