@@ -42,8 +42,17 @@ runs:
       run: |
         if [ "${{ inputs.type }}" = "cask" ]; then
           TYPE_FLAG="--cask"
+          FILE="Casks/${{ inputs.name }}.rb"
         else
           TYPE_FLAG="--formula"
+          FILE="Formula/${{ inputs.name }}.rb"
+        fi
+
+        # Check if livecheck is explicitly skipped (intentionally pinned package)
+        if grep -q "livecheck do" "$FILE" && grep -q "skip" "$FILE"; then
+          echo "Livecheck explicitly skipped: package is intentionally pinned"
+          echo "Skipping version check"
+          exit 0
         fi
 
         LIVECHECK_OUTPUT=$(brew livecheck --json $TYPE_FLAG "impuls42/tap/${{ inputs.name }}" 2>&1) || true
