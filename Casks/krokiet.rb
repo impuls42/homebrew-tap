@@ -1,6 +1,6 @@
 cask "krokiet" do
-  version "12.0.1"
-  sha256 "77e7420ce04f6e6aa01f9c509f800d8921beb361128ccfcbe9def3aa401fbf9b"
+  version "12.0.2"
+  sha256 "e143fbdc50a2ce5719db5e6311bf6f21728ad13a7bbd065e4f0f83c14573f436"
 
   url "https://github.com/qarmin/czkawka/releases/download/#{version}/mac_krokiet_arm64"
   name "krokiet"
