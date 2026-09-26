@@ -1,9 +1,9 @@
 cask "codenomad" do
   arch arm: "arm64", intel: "x64"
 
-  version "0.19.0"
-  sha256 arm:   "107dd5c42609c34604c487169ceb271b1ce5eae5c0051dbaaf4247249cb4ef5b",
-         intel: "23815b056b2e574dc1cc8f8f08674959a93ff16bc14ebab3d6621f572e5e9b46"
+  version "0.20.0"
+  sha256 arm:   "bff50717e5d8fed2a81d2877978e877e6fe8fbbb3d8bb2ff502470218147d342",
+         intel: "85ffe24e07a323272bfa079653832afd1eae01ac51a437d86796091991bd0821"
 
   url "https://github.com/NeuralNomadsAI/CodeNomad/releases/download/v#{version}/CodeNomad-Electron-macos-#{arch}-#{version}.zip"
   name "CodeNomad"
@@ -16,7 +16,7 @@ cask "codenomad" do
   end
 
   conflicts_with cask: "codenomad-tauri"
-  depends_on macos: :monterey
+  depends_on macos: :ventura
 
   app "CodeNomad.app"
 
