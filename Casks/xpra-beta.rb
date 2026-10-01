@@ -1,8 +1,8 @@
 cask "xpra-beta" do
   arch arm: "arm64"
 
-  version "6.6,41968"
-  sha256 arm: "ea7674e188131c007e35f00ec181768fca06f94b989be81247500fdfd47b7017"
+  version "7.0,42697"
+  sha256 arm: "ef4e798627d441662ff6c621294d8c0c63f2aae4f0b99a4debeeedfd14bf1680"
 
   revision_suffix = version.csv.second.present? ? "-r#{version.csv.second}" : ""
   url "https://xpra.org/beta/MacOS/#{arch}/Xpra-#{arch}-#{version.csv.first}#{revision_suffix}.dmg"
@@ -22,6 +22,7 @@ cask "xpra-beta" do
   end
 
   conflicts_with cask: "xpra"
+  depends_on arch: :arm64
   depends_on macos: :monterey
 
   app "Xpra.app"
