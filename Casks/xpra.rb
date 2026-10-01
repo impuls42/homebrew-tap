@@ -26,27 +26,17 @@ cask "xpra" do
   depends_on macos: :monterey
 
   app "Xpra.app"
+  command_wrapper "xpra",
+                  executable: "#{appdir}/Xpra.app/Contents/MacOS/Xpra"
 
-  shimscript = "#{HOMEBREW_PREFIX}/bin/xpra"
-
-  preflight do
-    FileUtils.rm shimscript, force: true
+  postflight_steps do
+    run "/usr/bin/codesign",
+        args:           ["--force", "--deep", "--sign", "-", "{{appdir}}/Xpra.app"],
+        writable_paths: ["{{appdir}}/Xpra.app"]
+    run "/usr/bin/xattr",
+        args:           ["-dr", "com.apple.quarantine", "{{appdir}}/Xpra.app"],
+        writable_paths: ["{{appdir}}/Xpra.app"]
   end
-
-  postflight do
-    File.write shimscript, <<~EOS
-      #!/bin/sh
-      exec #{appdir}/Xpra.app/Contents/MacOS/Xpra "$@"
-    EOS
-    File.chmod 0755, shimscript
-
-    system_command "/usr/bin/codesign",
-                   args: ["--force", "--deep", "--sign", "-", "#{appdir}/Xpra.app"]
-    system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/Xpra.app"]
-  end
-
-  uninstall delete: "#{HOMEBREW_PREFIX}/bin/xpra"
 
   zap delete: "/Library/Application Support/Xpra",
       trash:  [
