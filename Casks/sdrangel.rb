@@ -4,12 +4,10 @@ cask "sdrangel" do
          intel: "c454b306a46e253748568e2fc5002a3c886f0d48cfa0db84d364c13369b8d253"
 
   on_arm do
-    url "https://github.com/f4exb/sdrangel/releases/download/v#{version.csv.first}/sdrangel-#{version.csv.first}_mac-#{version.csv.second}_arm64.dmg",
-        verified: "github.com/f4exb/sdrangel/"
+    url "https://github.com/f4exb/sdrangel/releases/download/v#{version.csv.first}/sdrangel-#{version.csv.first}_mac-#{version.csv.second}_arm64.dmg"
   end
   on_intel do
-    url "https://github.com/f4exb/sdrangel/releases/download/v#{version.csv.first}/sdrangel-#{version.csv.first}_mac-#{version.csv.third}_x86_64.dmg",
-        verified: "github.com/f4exb/sdrangel/"
+    url "https://github.com/f4exb/sdrangel/releases/download/v#{version.csv.first}/sdrangel-#{version.csv.first}_mac-#{version.csv.third}_x86_64.dmg"
   end
 
   name "SDRangel"
