@@ -52,11 +52,13 @@ cask "sdrangel" do
 
   app "SDRangel.app"
 
-  postflight do
-    system_command "/usr/bin/codesign",
-                   args: ["--force", "--deep", "--sign", "-", "#{appdir}/SDRangel.app"]
-    system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/SDRangel.app"]
+  postflight_steps do
+    run "/usr/bin/codesign",
+        args:           ["--force", "--deep", "--sign", "-", "{{appdir}}/SDRangel.app"],
+        writable_paths: ["{{appdir}}/SDRangel.app"]
+    run "/usr/bin/xattr",
+        args:           ["-dr", "com.apple.quarantine", "{{appdir}}/SDRangel.app"],
+        writable_paths: ["{{appdir}}/SDRangel.app"]
   end
 
   zap trash: [
