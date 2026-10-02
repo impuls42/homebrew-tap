@@ -19,44 +19,38 @@ cask "firefox-webserial" do
     strategy :github_releases
   end
 
+  depends_on :macos
   container type: :naked
 
-  # No artifacts stanza needed - everything is handled in postflight
+  # No artifacts stanza needed - everything is handled in postflight_steps
 
-  postflight do
-    target_dir = "#{Dir.home}/Library/Application Support/Mozilla/NativeMessagingHosts"
-    system_command "/bin/mkdir", args: ["-p", target_dir]
+  postflight_steps do
+    # Give the architecture-specific download a stable name
+    move "firefox-webserial-macos-*", "firefox-webserial", source_glob: true
+    set_permissions "firefox-webserial", "0755"
 
-    # Find the downloaded binary (architecture-specific filename)
-    source_file = Dir.glob("#{staged_path}/firefox-webserial-macos-*").first
-    source_file = File.basename(source_file) if source_file
+    # The binary is not notarized, so macOS blocks Firefox from launching it while quarantined
+    run "/usr/bin/xattr",
+        args:           ["-dr", "com.apple.quarantine", "{{staged_path}}/firefox-webserial"],
+        writable_paths: ["firefox-webserial"]
 
-    # Copy the binary to target directory
-    system_command "/bin/cp",
-                   args: ["#{staged_path}/#{source_file}",
-                          "#{target_dir}/firefox-webserial"]
-
-    # Make it executable
-    system_command "/bin/chmod",
-                   args: ["+x", "#{target_dir}/firefox-webserial"]
-
-    # Create the manifest JSON file
-    manifest_path = "#{target_dir}/io.github.kuba2k2.webserial.json"
-    File.write manifest_path, <<~JSON
-      {
-        "name": "io.github.kuba2k2.webserial",
-        "description": "WebSerial for Firefox",
-        "path": "#{Dir.home}/Library/Application Support/Mozilla/NativeMessagingHosts/firefox-webserial",
-        "type": "stdio",
-        "allowed_extensions": ["webserial@kuba2k2.github.io"]
-      }
-    JSON
+    # Register the host with Firefox. Steps run with a temporary HOME, so use base: :home
+    # rather than "~". The manifest needs an absolute path and step content cannot
+    # reference the home directory, so point it at the staged binary.
+    mkdir_p "Library/Application Support/Mozilla/NativeMessagingHosts", base: :home
+    write_file "Library/Application Support/Mozilla/NativeMessagingHosts/io.github.kuba2k2.webserial.json",
+               <<~JSON, base: :home
+                 {
+                   "name": "io.github.kuba2k2.webserial",
+                   "description": "WebSerial for Firefox",
+                   "path": "{{staged_path}}/firefox-webserial",
+                   "type": "stdio",
+                   "allowed_extensions": ["webserial@kuba2k2.github.io"]
+                 }
+               JSON
   end
 
-  uninstall delete: [
-    "#{Dir.home}/Library/Application Support/Mozilla/NativeMessagingHosts/firefox-webserial",
-    "#{Dir.home}/Library/Application Support/Mozilla/NativeMessagingHosts/io.github.kuba2k2.webserial.json",
-  ]
+  uninstall delete: "~/Library/Application Support/Mozilla/NativeMessagingHosts/io.github.kuba2k2.webserial.json"
 
   zap trash: [
     "~/Library/Application Support/Mozilla/NativeMessagingHosts/firefox-webserial",
