@@ -1,6 +1,6 @@
 cask "murus" do
-  version "3.0-beta-3"
-  sha256 "7efe3ef48684fc9f3eeb786ed2e2c933ca25ea1f7b7d0cf2d7a1cdba73321e27"
+  version "3.0-rc2"
+  sha256 "e94e7f1b2fdaa173bffa3dbfc35205a23b0af67e3d02916f701ad339f44882f3"
 
   url "https://github.com/TheMurusTeam/Murus/releases/download/v#{version}/murus-#{version}.zip",
       verified: "github.com/TheMurusTeam/Murus/"
@@ -23,7 +23,7 @@ cask "murus" do
     end
   end
 
-  depends_on macos: :ventura
+  depends_on macos: :sonoma
 
   app "Murus.app"
 
