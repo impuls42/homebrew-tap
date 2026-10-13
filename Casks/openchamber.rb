@@ -1,9 +1,9 @@
 cask "openchamber" do
   arch arm: "arm64", intel: "x64"
 
-  version "2.2.0"
-  sha256 arm:   "c5d194f0b4b993e3a35f0cbbe407e99cb7fd0299840bb8aa8fcaceca6c7d2263",
-         intel: "c81224bdde4ff156ba12745d5bc315df1e723ad72d85bd0641af864b9805aaa9"
+  version "2.3.1"
+  sha256 arm:   "d0f90c47700fa96d47f7b411ebbe046007eb896b0785e6613c1261b268db3298",
+         intel: "62c0ef4ac0702465eebf0554f5e0ac78afcbc5556d026c19a0061d92bb1d5879"
 
   url "https://github.com/openchamber/openchamber/releases/download/v#{version}/OpenChamber-#{version}-mac-#{arch}.dmg"
   name "OpenChamber"
