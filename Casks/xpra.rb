@@ -1,8 +1,8 @@
 cask "xpra" do
   arch arm: "arm64"
 
-  version "6.5.6,0"
-  sha256 arm: "0446e0ba03cb819ddbc2053c62c4b2abbee1a75c9807a9c86b9c752f0d908b00"
+  version "7.0,0"
+  sha256 arm: "44429e46ff8db7c9baee90536291f59b247e4bd0ed663b2d5fff1aa76df13c91"
 
   revision_suffix = version.csv.second.present? ? "-r#{version.csv.second}" : ""
   url "https://xpra.org/dists/MacOS/#{arch}/Xpra-#{arch}-#{version.csv.first}#{revision_suffix}.dmg"
