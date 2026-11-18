@@ -1,9 +1,9 @@
 cask "codenomad-tauri" do
   arch arm: "arm64", intel: "x64"
 
-  version "1.0.1"
-  sha256 arm:   "d0fd05abfe5278e3574db1725a0a8d00653d71071cc8b9d939cca17e68f1f763",
-         intel: "8294488626b3f2f7ea20a9ded503562194e75b85e22c251c3cae8c7e4b25bbd2"
+  version "1.1.0"
+  sha256 arm:   "242949bfe9e78e6149c177f117a583536d83983369eff1daa625bbda52e414b6",
+         intel: "422d835c2c0c40eeadae31f3f3c5906225e3fd21fe22deea587346c3321f4d02"
 
   url "https://github.com/NeuralNomadsAI/CodeNomad/releases/download/v#{version}/CodeNomad-Tauri-macos-#{arch}-#{version}.zip"
   name "CodeNomad Tauri"
@@ -16,7 +16,7 @@ cask "codenomad-tauri" do
   end
 
   conflicts_with cask: "codenomad"
-  depends_on macos: :ventura
+  depends_on macos: :sonoma
 
   app "CodeNomad.app"
 
